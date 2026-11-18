@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Prism{% endblock %} · Farview</title>
+<link rel="stylesheet" href="{{ base }}/static/app.css">
+<script src="{{ base }}/static/chart.umd.js" defer></script>
+</head><body><div class="shell">
+<nav class="side">
+  <div class="logo">Prism<span>.</span></div>
+  <div class="sub">AI visibility · Farview portcos</div>
+  <h4>Portfolio</h4>
+  <a href="{{ base }}/" class="{{ 'on' if request.url.path.rstrip('/') == base }}">All companies</a>
+  {% for nb in brands_nav %}<a href="{{ base }}/b/{{ nb.slug }}" class="{{ 'on' if (request.url.path ~ '/').startswith(base ~ '/b/' ~ nb.slug ~ '/') }}">{{ nb.name }}</a>{% endfor %}
+  {% if user.is_admin %}
+  <h4>Command Centre</h4>
+  <a href="{{ base }}/cc/" class="{{ 'on' if cc == 'home' }}">Overview</a>
+  <a href="{{ base }}/cc/engines" class="{{ 'on' if cc == 'engines' }}">Engines</a>
+  <a href="{{ base }}/cc/keys" class="{{ 'on' if cc == 'keys' }}">Keys</a>
+  <a href="{{ base }}/cc/budget" class="{{ 'on' if cc == 'budget' }}">Budget &amp; spend</a>
+  <a href="{{ base }}/cc/schedules" class="{{ 'on' if cc == 'schedules' }}">Schedules</a>
+  <a href="{{ base }}/cc/brands" class="{{ 'on' if cc == 'brands' }}">Brands</a>
+  <a href="{{ base }}/cc/settings" class="{{ 'on' if cc == 'settings' }}">Settings</a>
+  <a href="{{ base }}/cc/tokens" class="{{ 'on' if cc == 'tokens' }}">API tokens</a>
+  <a href="{{ base }}/cc/audit" class="{{ 'on' if cc == 'audit' }}">Audit log</a>
+  {% endif %}
+  <h4>{{ user.get('name') }}</h4>
+  <a href="{{ base }}/logout">Sign out</a>
+</nav>
+<main class="main">
+{% if flash %}<div class="flash {{ 'err' if flash.kind == 'err' }}">{{ flash.msg }}</div>{% endif %}
+{% block content %}{% endblock %}
+</main></div>
+{% block scripts %}{% endblock %}
+</body></html>

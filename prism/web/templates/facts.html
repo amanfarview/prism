@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<p class="muted">The fact sheet is the source of truth. Prism flags answers that contradict it.
+{% if not ai_on %}Only "known wrong" patterns are checked right now; switch on the AI pass in Command Centre &gt; Settings to check every statement (paid, budget-capped).{% endif %}</p>
+<div class="grid2">
+<div><h2>Wrong statements AI made ({{ wrong|length }})</h2>
+<table><tr><th>What AI said</th><th>About</th><th>Engine</th><th>How found</th><th></th></tr>
+{% for c, a in wrong %}<tr style="{{ 'opacity:.5' if c.resolved }}"><td class="small">{{ c.statement }}</td><td>{{ c.attribute }}</td><td class="small">{{ a.engine_key }}<br>{{ a.created_at|dt('%d %b') }}</td><td><span class="pill">{{ c.method }}</span></td>
+<td><form method="post" action="{{ base }}/b/{{ b.slug }}/claims/{{ c.id }}/resolve">{{ m.csrf_field(csrf) }}<button class="btn ghost small">{{ 'Reopen' if c.resolved else 'Resolved' }}</button></form></td></tr>
+{% else %}<tr><td colspan="5" class="muted">Nothing flagged in the last {{ days }} days.</td></tr>{% endfor %}</table>
+{% if unver %}<h2>Statements the fact sheet doesn't cover ({{ unver|length }})</h2>
+<table>{% for c, a in unver %}<tr><td class="small">{{ c.statement }}</td><td>{{ c.attribute }}</td><td class="small">{{ a.engine_key }}</td></tr>{% endfor %}</table>
+<p class="small muted">Add facts for the ones that matter, so future answers are checked against them.</p>{% endif %}
+{% if others %}<h2>Vendors AI names that you don't track</h2><p>{% for n, c in others %}<span class="pill">{{ n }} · {{ c }}</span> {% endfor %}</p>{% endif %}
+</div>
+<div><h2>Fact sheet</h2>
+<table><tr><th>Attribute</th><th>Correct value</th><th>Known wrong patterns</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
+{% for f in facts %}<tr><td><b>{{ f.attribute }}</b><div class="small muted">{{ f.source }}</div></td><td class="small">{{ f.value }}</td><td class="small"><code>{{ (f.wrong_patterns or [])|join('</code><br><code>')|safe }}</code></td>
+{% if user.is_admin %}<td><form method="post" action="{{ base }}/b/{{ b.slug }}/facts/{{ f.id }}/delete">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Delete</button></form></td>{% endif %}</tr>
+{% else %}<tr><td colspan="4" class="muted">No facts yet.</td></tr>{% endfor %}</table>
+{% if user.is_admin %}<div class="panel" style="margin-top:12px"><form method="post" action="{{ base }}/b/{{ b.slug }}/facts/save">{{ m.csrf_field(csrf) }}
+<div class="row"><div><label>Attribute</label><input name="attribute" required placeholder="Headquarters"></div><div style="flex:1"><label>Correct value</label><input name="value" required style="width:100%"></div></div>
+<label>Known wrong patterns (regex, one per line, optional)</label><textarea name="wrong_patterns" rows="2" placeholder="Amplience[^.]{0,40}(owned by|acquired by) Adobe"></textarea>
+<label>Source</label><input name="source" style="width:100%"><p><button class="btn">Add fact</button></p></form></div>{% endif %}
+</div></div>
+{% endblock %}

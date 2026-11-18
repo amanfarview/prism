@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}Schedules{% endblock %}
+{% block content %}
+<h1>Schedules</h1>
+<p class="muted">One schedule per company. Projected cost uses current prompts, markets, engines and prices. Active total: <b>{{ total|money }}</b>/month{% if gcap %} against a {{ gcap|money }} cap{% endif %}.
+More samples give tighter ranges: 3 is a sensible minimum, 5 for decisions.</p>
+{% for x in rows %}{% set b = bmap[x.brand_id] %}
+<div class="panel"><form method="post" action="{{ base }}/cc/schedules/{{ x.id }}/save">{{ m.csrf_field(csrf) }}
+<div class="row" style="justify-content:space-between"><b>{{ b.name }}</b><span class="small muted">next run {{ x.next_run_at|dt }} · last {{ x.last_run_at|dt }} · projected <b>{{ proj[x.id]|money }}</b>/month</span></div>
+<div class="row">
+<label style="color:var(--ink)"><input type="checkbox" name="active" {{ 'checked' if x.active }}> Active</label>
+<div><label>Cadence</label><select name="cadence">{% for c in ['daily','weekly','fortnightly','monthly'] %}<option {{ 'selected' if c == x.cadence }}>{{ c }}</option>{% endfor %}</select></div>
+<div><label>Day</label><select name="weekday">{% for i, d in [(0,'Mon'),(1,'Tue'),(2,'Wed'),(3,'Thu'),(4,'Fri'),(5,'Sat'),(6,'Sun')] %}<option value="{{ i }}" {{ 'selected' if i == x.weekday }}>{{ d }}</option>{% endfor %}</select></div>
+<div><label>Hour (UTC)</label><input type="number" name="hour_utc" value="{{ x.hour_utc }}" min="0" max="23" style="width:60px"></div>
+<div><label>Samples</label><input type="number" name="samples" value="{{ x.samples }}" min="1" max="20" style="width:60px"></div>
+<div style="flex:1"><label>Engines (none = all enabled)</label>{% for e in engines %}<label style="display:inline-block;margin-right:8px;color:var(--ink)"><input type="checkbox" name="engine" value="{{ e.key }}" {{ 'checked' if e.key in (x.engine_keys or []) }}> {{ e.label }}</label>{% endfor %}</div>
+<button class="btn small">Save</button></div></form></div>
+{% endfor %}
+{% endblock %}

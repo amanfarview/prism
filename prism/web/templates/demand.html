@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<h2>Prompt ideas from search data</h2>
+{% if not sugg %}<p class="muted">Nothing question-like or comparison-shaped found in that file.</p>{% else %}
+<form method="post" action="{{ base }}/b/{{ b.slug }}/prompts/import/confirm">{{ m.csrf_field(csrf) }}
+<table><tr><th></th><th>Prompt</th><th>Volume</th><th>Branded</th></tr>
+{% for x in sugg %}<tr><td><input type="checkbox" name="pick" value="{{ x.prompt }}||{{ x.volume }}" {{ 'checked' if not x.branded and loop.index <= 15 }}></td><td>{{ x.prompt }}</td><td>{{ x.volume }}</td><td>{{ 'yes' if x.branded else '' }}</td></tr>{% endfor %}
+</table><p><button class="btn">Add selected</button> <a href="{{ base }}/b/{{ b.slug }}/prompts">Cancel</a></p></form>
+<p class="small muted">Unbranded questions usually matter more: they're where AI decides who to recommend.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<p class="muted">Which AI bots read {{ b.domain }}, from your server or CDN logs. "User" bots fetch a page while someone is chatting; "search" bots build answer indexes; "training" bots collect training data. User agents can be faked, so treat as indicative. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/crawlers', days) }}</p>
+{% if not total %}<div class="note">No crawler data yet. Send log lines (combined format or JSON lines) to
+<code>POST {{ public_url }}/api/v1/ingest/crawlers/{{ b.slug }}</code> with a <b>write</b> API token, e.g. a nightly cron:<br>
+<code>curl -s -X POST -H "Authorization: Bearer $PRISM_TOKEN" -H "Content-Type: text/plain" --data-binary @access.log {{ public_url }}/api/v1/ingest/crawlers/{{ b.slug }}</code></div>
+{% else %}
+<div class="grid2"><div><h2>By bot ({{ total }} hits)</h2><table><tr><th>Bot</th><th>Operator</th><th>Purpose</th><th>Hits</th></tr>
+{% for (bot, op, pur), n in by_bot %}<tr><td>{{ bot }}</td><td>{{ op }}</td><td><span class="pill">{{ pur }}</span></td><td>{{ n }}</td></tr>{% endfor %}</table>
+{% if errors %}<h2>Errors served to AI bots</h2><table>{% for (bot, st), n in errors %}<tr><td>{{ bot }}</td><td>{{ st }}</td><td>{{ n }}</td></tr>{% endfor %}</table>{% endif %}</div>
+<div><h2>Pages read mid-chat and for answers</h2><table><tr><th>Path</th><th>Hits</th></tr>{% for p, n in by_path %}<tr><td class="small">{{ p }}</td><td>{{ n }}</td></tr>{% endfor %}</table></div></div>
+{% endif %}
+{% endblock %}

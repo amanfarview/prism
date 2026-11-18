@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}Portfolio{% endblock %}
+{% block content %}
+<h1>AI visibility across the portfolio</h1>
+<p class="muted">How often ChatGPT, Claude, Gemini, Perplexity and the rest name each company when buyers ask about its category. Ranges are 95% confidence; changes are only called when they're unlikely to be noise. {{ m.days_picker(base, '/', days) }}</p>
+<table>
+<tr><th>Company</th><th>Named in</th><th style="width:180px">95% range</th><th>Visibility</th><th>Rank</th><th>Avg position</th><th>Share of voice</th><th>vs previous {{ days }} days</th><th>Answers</th><th>Last run</th></tr>
+{% for r in rows %}
+<tr>
+<td><a href="{{ base }}/b/{{ r.brand.slug }}"><b>{{ r.brand.name }}</b></a><div class="small muted">{{ r.brand.category }}</div></td>
+<td><b>{{ r.rate|pct }}</b></td>
+<td>{{ m.cibar(r.rate, r.rate_ci) }}<div class="small muted">{{ r.rate_ci|ci }}</div></td>
+<td>{{ r.visibility|num }}</td>
+<td>{% if r.answers %}#{{ r.rank }} of {{ r.of }}{% else %}–{% endif %}</td>
+<td>{{ r.avg_position|num }}</td>
+<td>{{ r.sov|pct }}</td>
+<td>{% set d = r.direction %}<span class="pill {{ 'ok' if d == 'up' else 'bad' if d == 'down' else '' }}">{{ d }}</span></td>
+<td>{{ r.answers }}</td>
+<td class="small">{% if r.last_run %}{{ r.last_run.created_at|dt('%d %b') }} {{ m.status(r.last_run.status) }}{% else %}never{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+<p class="small muted">Spend this month: {{ spend|money }}. {% if user.is_admin %}<a href="{{ base }}/cc/budget">Budget &amp; spend</a>{% endif %}</p>
+{% endblock %}

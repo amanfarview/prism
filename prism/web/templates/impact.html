@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<p class="muted">Log what you changed and which prompts it should move. Prism compares those prompts before and after with prompts you didn't touch (difference-in-differences), so a model update that lifts everything isn't mistaken for your win.</p>
+<table><tr><th>Change</th><th>Shipped</th><th>Targets</th><th>Targeted: before → after</th><th>Control: before → after</th><th>Effect</th><th>Verdict</th></tr>
+{% for c in changes %}{% set r = results[c.id] %}
+<tr><td><b>{{ c.title }}</b>{% if c.url %}<div class="small"><a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.url[:60] }}</a></div>{% endif %}</td>
+<td class="nowrap">{{ c.shipped_on|dt('%d %b %Y') }}<div class="small muted">window {{ c.window_days }}d to {{ r.window_ends }}</div></td>
+<td class="small">{% for pid in c.target_prompt_ids %}{{ pmap[pid].text[:50] if pid in pmap else pid }}<br>{% endfor %}</td>
+<td>{{ r.rates.pre_t|pct }} → {{ r.rates.post_t|pct }}<div class="small muted">n={{ r.n.pre_t }}/{{ r.n.post_t }}</div></td>
+<td>{{ r.rates.pre_c|pct }} → {{ r.rates.post_c|pct }}<div class="small muted">n={{ r.n.pre_c }}/{{ r.n.post_c }}</div></td>
+<td>{% if r.did is not none %}<b>{{ '%+.0f'|format(r.did*100) }} pts</b><div class="small muted">95% {{ '%+.0f'|format(r.ci[0]*100) }} to {{ '%+.0f'|format(r.ci[1]*100) }}</div>{% else %}–{% endif %}</td>
+<td><span class="pill {{ 'ok' if r.verdict == 'worked' else 'bad' if r.verdict == 'hurt' else '' }}">{{ r.verdict }}</span>{% if r.note %}<div class="small muted">{{ r.note }}</div>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="muted">No changes logged yet.</td></tr>{% endfor %}
+</table>
+<div class="panel" style="margin-top:16px"><h2 style="margin-top:0">Log a change</h2>
+<form method="post" action="{{ base }}/b/{{ b.slug }}/impact/add">{{ m.csrf_field(csrf) }}
+<div class="row"><div style="flex:2"><label>What changed</label><input name="title" required style="width:100%" placeholder="Added comparison table to /compare/contentful"></div>
+<div style="flex:2"><label>Page URL</label><input name="url" style="width:100%"></div>
+<div><label>Shipped on</label><input type="date" name="shipped_on" value="{{ today }}" required></div>
+<div><label>Window (days)</label><input type="number" name="window_days" value="28" min="7" max="120" style="width:80px"></div></div>
+<label>Prompts this should move</label>
+<div style="max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff">
+{% for p in prompts %}<div><label style="display:inline;color:var(--ink)"><input type="checkbox" name="target" value="{{ p.id }}"> {{ p.text }}</label></div>{% endfor %}</div>
+<label>Notes</label><textarea name="notes" rows="2"></textarea><p><button class="btn">Log change</button></p></form></div>
+{% endblock %}

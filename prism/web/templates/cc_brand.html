@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}{{ b.name }}{% endblock %}
+{% block content %}
+<h1>{{ b.name }}</h1><p><a href="{{ base }}/b/{{ b.slug }}">Open dashboard</a></p>
+<div class="grid2">
+<div class="panel"><h2 style="margin-top:0">Brand</h2><form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/save">{{ m.csrf_field(csrf) }}
+<label>Name</label><input name="name" value="{{ b.name }}" style="width:100%">
+<label>Domain (for classifying cited pages)</label><input name="domain" value="{{ b.domain }}" style="width:100%">
+<label>Other names AI might use (comma separated)</label><input name="aliases" value="{{ (b.aliases or [])|join(', ') }}" style="width:100%">
+<label>Category</label><input name="category" value="{{ b.category }}" style="width:100%">
+<label>Notes</label><textarea name="notes" rows="2">{{ b.notes }}</textarea>
+<label style="color:var(--ink)"><input type="checkbox" name="active" {{ 'checked' if b.active }}> Active</label>
+<p><button class="btn">Save</button></p></form></div>
+<div class="panel"><h2 style="margin-top:0">Markets</h2>
+<table>{% for mk in b.markets %}<tr style="{{ 'opacity:.5' if not mk.active }}"><td>{{ mk.label }}</td><td><form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/market">{{ m.csrf_field(csrf) }}<input type="hidden" name="id" value="{{ mk.id }}"><button class="btn ghost small">{{ 'Pause' if mk.active else 'Resume' }}</button></form></td></tr>{% endfor %}</table>
+<form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/market" class="row">{{ m.csrf_field(csrf) }}<div><label>Country</label><input name="country" value="US" style="width:60px"></div><div><label>Language</label><input name="language" value="en" style="width:60px"></div><div><label>City (optional)</label><input name="city" style="width:110px"></div><button class="btn small">Add market</button></form>
+<p class="small muted">Each market multiplies the number of calls.</p>
+<h2>Content connector</h2>
+<p class="small muted">Trace cited pages to the CMS content behind them. Amplience: the public Content Delivery 2 API, read-only and free.</p>
+<form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/connector">{{ m.csrf_field(csrf) }}
+<div class="row"><div><label>Amplience hub name</label><input name="hub" value="{{ conn.get('hub','') }}" placeholder="e.g. amplience-web"></div>
+<div><label>Strip path prefix</label><input name="strip_prefix" value="{{ conn.get('strip_prefix','') }}"></div>
+<label style="color:var(--ink)"><input type="checkbox" name="locale_prefix" {{ 'checked' if conn.get('locale_prefix') }}> Paths start with a locale</label>
+<button class="btn small">Save</button></div></form></div>
+</div>
+<div class="panel"><h2 style="margin-top:0">Competitors</h2>
+<div class="row small muted" style="font-weight:600"><div style="width:190px">Name</div><div style="width:190px">Domain</div><div style="width:270px">Other names</div><div>Active</div></div>
+{% for c in b.competitors %}<form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/competitor" class="row" style="margin:4px 0">{{ m.csrf_field(csrf) }}<input type="hidden" name="id" value="{{ c.id }}">
+<input name="name" value="{{ c.name }}" style="width:190px"><input name="domain" value="{{ c.domain }}" style="width:190px"><input name="aliases" value="{{ (c.aliases or [])|join(', ') }}" style="width:270px">
+<select name="active"><option value="on" {{ 'selected' if c.active }}>yes</option><option value="off" {{ 'selected' if not c.active }}>no</option></select><button class="btn ghost small">Save</button></form>{% endfor %}
+<form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/competitor" class="row" style="margin-top:8px">{{ m.csrf_field(csrf) }}
+<input name="name" placeholder="New competitor" required style="width:190px"><input name="domain" placeholder="domain.com" style="width:190px"><input name="aliases" placeholder="other names" style="width:270px"><button class="btn small">Add</button></form>
+<p class="small muted">After changing names, use Re-analyse on recent runs (Runs tab) to apply them to stored answers. Free.</p></div>
+{% endblock %}

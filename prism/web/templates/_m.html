@@ -1,0 +1,22 @@
+{% macro cibar(rate, ci) -%}
+<div class="bar" title="{{ rate|pct }} (95% range {{ ci|ci }})"><b style="left:{{ (ci[0]*100)|round(1) }}%;width:{{ ((ci[1]-ci[0])*100)|round(1) }}%"></b><i style="width:{{ (rate*100)|round(1) }}%;opacity:.85;height:4px;top:2px"></i></div>
+{%- endmacro %}
+
+{% macro tabs(b, tab, base) -%}
+<div class="tabs">
+{% for key, label in [('overview','Overview'),('prompts','Prompts'),('sources','Sources'),('facts','Facts'),('actions','Actions'),('impact','Impact'),('audit','Site audit'),('crawlers','AI crawlers'),('runs','Runs')] %}
+<a href="{{ base }}/b/{{ b.slug }}{{ '' if key == 'overview' else '/' ~ key }}" class="{{ 'on' if tab == key }}">{{ label }}</a>
+{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro csrf_field(csrf) %}<input type="hidden" name="csrf" value="{{ csrf }}">{% endmacro %}
+
+{% macro status(s) -%}
+<span class="pill {{ {'done':'ok','partial':'warn','budget_stopped':'bad','failed':'bad','blocked':'bad','queued':'','running':'warn','planned':''}.get(s,'') }}">{{ s.replace('_',' ') }}</span>
+{%- endmacro %}
+
+{% macro days_picker(base, path, days) -%}
+<span class="small muted">Period:</span>
+{% for d in [7,30,90] %}<a class="pill {{ 'ok' if d == days }}" href="{{ base }}{{ path }}?days={{ d }}">{{ d }} days</a> {% endfor %}
+{%- endmacro %}

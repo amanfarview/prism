@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="muted">Every change in the Command Centre, every run and every key rotation (keys themselves are never logged).</p>
+<table><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr>
+{% for r in rows %}<tr><td class="nowrap small">{{ r.at|dt }}</td><td class="small">{{ r.user }}</td><td>{{ r.action.replace('_',' ') }}</td><td class="small"><code>{{ r.detail|tojson }}</code></td></tr>{% endfor %}</table>
+{% endblock %}

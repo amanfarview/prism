@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}Budget{% endblock %}
+{% block content %}
+<h1>Budget &amp; spend</h1>
+<p class="muted">Every run is estimated first and refused if it would break a cap. While running, each call reserves its estimated cost, so a run stops at the cap rather than after it. Alerts go to Teams at the thresholds below.</p>
+{% set g = rows|selectattr('scope','equalto','global')|first %}
+<div class="panel"><form method="post" action="{{ base }}/cc/budget/save">{{ m.csrf_field(csrf) }}
+<div class="row"><div><label>Overall monthly cap ($)</label><input name="global_cap" value="{{ g.monthly_cap_usd }}" style="width:110px"></div>
+<div><label>Alert at (% of cap)</label><input name="alerts" value="{{ (g.alert_pcts or [])|join(',') }}" style="width:110px"></div></div>
+<label>Per-provider caps (blank = no separate cap)</label><div class="row">
+{% for p in providers %}{% set r = rows|selectattr('provider','equalto',p)|first %}<div><label>{{ p }}</label><input name="cap_{{ p }}" value="{{ r.monthly_cap_usd if r else '' }}" style="width:90px"></div>{% endfor %}</div>
+<p><button class="btn">Save budgets</button></p></form></div>
+<div class="grid2"><div><h2>{{ month }}: {{ spent|money }} by engine</h2>
+<table><tr><th>Provider</th><th>Engine</th><th>Purpose</th><th>Calls</th><th>Spent</th></tr>
+{% for p, e, pur, n, c in ledger %}<tr><td>{{ p }}</td><td>{{ e }}</td><td>{{ pur }}</td><td>{{ n }}</td><td>{{ c|money }}</td></tr>{% else %}<tr><td colspan="5" class="muted">Nothing yet.</td></tr>{% endfor %}</table></div>
+<div><h2>By company</h2><table><tr><th>Company</th><th>Spent</th></tr>{% for bid, c in by_brand %}<tr><td>{{ bmap.get(bid, 'Tests / shared') }}</td><td>{{ c|money }}</td></tr>{% endfor %}</table>
+<h2>By month</h2><table><tr><th>Month</th><th>Spent</th></tr>{% for mo, c in months %}<tr><td>{{ mo }}</td><td>{{ c|money }}</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

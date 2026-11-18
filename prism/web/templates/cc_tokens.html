@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}API tokens{% endblock %}
+{% block content %}
+<h1>API &amp; MCP tokens</h1>
+<p class="muted">Service tokens for scripts, log shipping and the Prism MCP server, so access isn't tied to one person's login. Read tokens can only read; write tokens can also send crawler logs.</p>
+{% if new %}<div class="flash">New token (copy it now, it won't be shown again): <code>{{ new }}</code></div>{% endif %}
+<table><tr><th>Name</th><th>Scope</th><th>Created</th><th>Last used</th><th></th></tr>
+{% for t in rows %}<tr style="{{ 'opacity:.5' if t.revoked }}"><td>{{ t.name }}</td><td>{{ t.scope }}</td><td class="small">{{ t.created_at|dt }} · {{ t.created_by }}</td><td class="small">{{ t.last_used_at|dt }}</td>
+<td>{% if not t.revoked %}<form method="post" action="{{ base }}/cc/tokens/{{ t.id }}/revoke">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Revoke</button></form>{% else %}revoked{% endif %}</td></tr>{% endfor %}</table>
+<div class="panel" style="margin-top:14px"><form method="post" action="{{ base }}/cc/tokens/new" class="row">{{ m.csrf_field(csrf) }}<div><label>Name</label><input name="name" required placeholder="Claude MCP"></div>
+<div><label>Scope</label><select name="scope"><option>read</option><option>write</option></select></div><button class="btn">Create token</button></form></div>
+<h2>Using the MCP server</h2><p class="small">Claude Code: <code>claude mcp add --transport http prism https://jarvis.farviewequity.com/prism/mcp/ --header "Authorization: Bearer &lt;token&gt;"</code>. Tools (read-only): list_brands, brand_summary, engine_breakdown, weakest_prompts, top_sources, recommended_actions.</p>
+{% endblock %}

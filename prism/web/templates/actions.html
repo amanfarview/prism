@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<p class="muted">What to do next, ranked by likely impact. Each one says what triggered it. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/actions', days) }}</p>
+{% for a in acts %}
+<div class="act"><div class="row" style="justify-content:space-between"><h3>{{ a.title }}</h3><span class="pill">{{ a.kind.replace('_',' ') }}</span></div>
+<div class="muted">{{ a.why }}</div>
+<ul>{% for st in a.steps if st %}<li>{{ st }}</li>{% endfor %}</ul>
+{% if a.evidence.prompt_id %}<div class="small"><a href="{{ base }}/b/{{ b.slug }}/prompts/{{ a.evidence.prompt_id }}">Read the answers</a></div>{% endif %}
+</div>
+{% else %}<p class="muted">No actions. Either everything looks healthy or there isn't enough data yet.</p>{% endfor %}
+{% endblock %}

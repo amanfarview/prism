@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}{{ b.name }} prompts{% endblock %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<div class="row" style="justify-content:space-between"><p class="muted">Buyer questions, worst gap first. Click one to read every answer word for word. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/prompts', days) }}</p>
+<a class="btn ghost small" href="{{ base }}/b/{{ b.slug }}/export.csv">Export answers (CSV)</a></div>
+<table>
+<tr><th>Prompt</th><th>Tags</th><th>Named in</th><th style="width:150px">95% range</th><th>Avg pos.</th><th>Leading competitor</th>
+{% for k in used %}<th class="small" title="{{ engines[k].label if k in engines else k }}">{{ (engines[k].label if k in engines else k)[:14] }}</th>{% endfor %}
+<th>Answers</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
+{% for r in rows %}{% set p = r.prompt %}
+<tr style="{{ 'opacity:.5' if not p.active }}">
+<td><a href="{{ base }}/b/{{ b.slug }}/prompts/{{ p.id }}">{{ p.text }}</a>{% if p.source != 'manual' %} <span class="pill">{{ p.source }}{% if p.demand %} · {{ p.demand }}{% endif %}</span>{% endif %}</td>
+<td class="small">{{ (p.tags or [])|join(', ') }}</td>
+<td><b>{{ r.rate|pct if r.n else '–' }}</b></td>
+<td>{% if r.n %}{{ m.cibar(r.rate, r.rate_ci) }}{% endif %}</td>
+<td>{{ r.avg_position|num }}</td>
+<td>{{ r.top_competitor }} {% if r.top_competitor %}<span class="small muted">{{ r.top_competitor_rate|pct }}</span>{% endif %}</td>
+{% for k in used %}{% set pe = r.per_engine.get(k) %}<td class="small">{% if pe %}{{ pe[0] }}/{{ pe[1] }}{% else %}–{% endif %}</td>{% endfor %}
+<td>{{ r.n }}</td>
+{% if user.is_admin %}<td><form method="post" action="{{ base }}/b/{{ b.slug }}/prompts/{{ p.id }}/toggle">{{ m.csrf_field(csrf) }}<button class="btn ghost small">{{ 'Pause' if p.active else 'Resume' }}</button></form></td>{% endif %}
+</tr>{% endfor %}
+</table>
+{% if user.is_admin %}
+<div class="grid2" style="margin-top:16px">
+<div class="panel"><h2 style="margin-top:0">Add prompts</h2>
+<form method="post" action="{{ base }}/b/{{ b.slug }}/prompts/add">{{ m.csrf_field(csrf) }}
+<label>One per line, written the way a buyer would ask</label><textarea name="text" rows="5"></textarea>
+<label>Tags (comma separated)</label><input name="tags" style="width:100%">
+<p><button class="btn">Add</button></p></form></div>
+<div class="panel"><h2 style="margin-top:0">Add from real search demand</h2>
+<p class="small muted">Upload a Search Console "Queries" export or an on-site search terms CSV. Prism picks question-like and comparison queries and shows them for you to choose. Free.</p>
+<form method="post" enctype="multipart/form-data" action="{{ base }}/b/{{ b.slug }}/prompts/import">{{ m.csrf_field(csrf) }}
+<input type="file" name="file" accept=".csv" required> <button class="btn">Suggest prompts</button></form></div>
+</div>
+{% endif %}
+{% endblock %}

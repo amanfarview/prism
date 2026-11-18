@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}Prompt{% endblock %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<h2 style="margin-top:0">“{{ p.text }}”</h2>
+<p class="muted">{{ total }} answers in the last {{ days }} days{% if total > 150 %}, newest 150 shown{% endif %}. Every answer is stored exactly as the engine returned it.
+<span class="small"><mark class="self">{{ b.name }}</mark> <mark class="comp">competitor</mark></span></p>
+<div class="row" style="margin-bottom:10px">
+<a class="pill {{ 'ok' if not engine }}" href="?days={{ days }}">All engines</a>
+{% for k, v in per_engine.items() %}<a class="pill {{ 'ok' if engine == k }}" href="?days={{ days }}&engine={{ k }}">{{ engines[k].label if k in engines else k }}: named {{ v[0] }}/{{ v[1] }}</a>{% endfor %}
+</div>
+{% for r in rows %}{% set a = r.a %}
+<div class="panel">
+<div class="row" style="justify-content:space-between">
+<div><b>{{ engines[a.engine_key].label if a.engine_key in engines else a.engine_key }}</b> <span class="pill {{ a.mode }}">{{ a.mode }}</span>
+<span class="small muted">sample {{ a.sample_idx + 1 }} · run {{ a.run_id }} · {{ a.created_at|dt }} · model {{ a.model }} · {{ a.latency_ms }} ms · {{ a.cost_usd|money }}</span></div>
+<div class="small">{% for mm in r.mentions if mm.entity_type != 'other' %}<span class="pill {{ 'own' if mm.entity_type == 'self' else 'competitor' }}">{{ mm.position }}. {{ mm.entity_name }}{% if mm.sentiment is not none %} · {{ '%+.1f'|format(mm.sentiment) }}{% endif %}{% if mm.recommended %} · recommended{% endif %}</span> {% else %}<span class="pill bad">no tracked brand named</span>{% endfor %}</div>
+</div>
+<div class="answer" style="margin-top:8px">{{ r.html }}</div>
+{% if r.cits %}<details style="margin-top:6px"><summary class="small">{{ r.cits|length }} sources</summary><ol class="small">
+{% for c in r.cits %}<li><span class="pill {{ c.owner_type if c.owner_type != 'third_party' else '' }}">{{ c.owner_type.replace('_',' ') }}</span> <a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.domain }}{{ c.path[:80] }}</a>{% if c.content_ref and c.content_ref != 'unmatched' %} <span class="pill ok">{{ c.content_ref.split('|')[1] }}</span>{% endif %}</li>{% endfor %}
+</ol></details>{% endif %}
+{% if a.search_queries %}<div class="small muted">Searched for: {{ a.search_queries|join(' · ') }}</div>{% endif %}
+</div>
+{% else %}<p class="muted">No answers yet for this prompt.</p>{% endfor %}
+{% endblock %}

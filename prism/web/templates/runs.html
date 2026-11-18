@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{% if user.is_admin %}
+<div class="panel"><h2 style="margin-top:0">Run now</h2>
+<form method="post" action="{{ base }}/b/{{ b.slug }}/run/plan">{{ m.csrf_field(csrf) }}
+<div class="row"><div><label>Samples per prompt per engine</label><input type="number" name="samples" value="3" min="1" max="20" style="width:90px"></div>
+<div style="flex:1"><label>Engines (none ticked = all enabled)</label>{% for e in engines %}<label style="display:inline-block;margin-right:10px;color:var(--ink)"><input type="checkbox" name="engine" value="{{ e.key }}"> {{ e.label }}</label>{% else %}<span class="muted">No engines enabled. Command Centre &gt; Engines.</span>{% endfor %}</div>
+<div><button class="btn orange">See cost estimate</button></div></div></form>
+<p class="small muted">Nothing is spent until you confirm on the next screen.</p></div>
+{% endif %}
+<table><tr><th>Run</th><th>Created</th><th>By</th><th>Status</th><th>Samples</th><th>Calls ok/planned</th><th>Failed</th><th>Estimate</th><th>Actual</th><th>Same as last run</th><th>Note</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
+{% for r in runs %}<tr><td>{{ r.id }}</td><td class="nowrap">{{ r.created_at|dt('%d %b %H:%M') }}</td><td class="small">{{ r.triggered_by }}</td><td>{{ m.status(r.status) }}</td><td>{{ r.samples }}</td><td>{{ r.done_calls }}/{{ r.planned_calls }}</td><td>{{ r.failed_calls }}</td><td>{{ r.est_cost_usd|money }}</td><td>{{ r.cost_usd|money }}</td>
+<td>{% if r.identical_to_previous_pct is not none %}<span class="pill {{ 'bad' if r.identical_to_previous_pct >= 60 else 'ok' }}">{{ r.identical_to_previous_pct|num(0) }}%</span>{% else %}–{% endif %}</td>
+<td class="small">{{ r.note }}{% for k, e in errs.get(r.id, []) %}<div class="muted">{{ k }}: {{ e[:140] }}</div>{% endfor %}</td>
+{% if user.is_admin %}<td>{% if r.status in ('done','partial','budget_stopped') %}<form method="post" action="{{ base }}/b/{{ b.slug }}/runs/{{ r.id }}/reanalyse">{{ m.csrf_field(csrf) }}<button class="btn ghost small" title="Re-apply names and fact patterns to stored answers. Free.">Re-analyse</button></form>{% endif %}</td>{% endif %}</tr>
+{% else %}<tr><td colspan="12" class="muted">No runs yet.</td></tr>{% endfor %}</table>
+<p class="small muted">"Same as last run" is the share of answers identical word for word to the previous run. Real AI answers vary; a high number means something is caching.</p>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<form method="post" action="{{ base }}/cc/settings/save">{{ m.csrf_field(csrf) }}
+<div class="panel"><h2 style="margin-top:0">AI pass (optional, paid)</h2>
+<p class="muted small">Everything else in Prism is free analysis of stored answers. The AI pass adds one cheap-model call per answer to judge whether each brand is <i>recommended</i>, the tone, untracked vendors, and every statement about the client checked against the fact sheet. Budget-capped like everything else. Roughly 1,500 tokens in and 500 out per answer.</p>
+<label style="color:var(--ink)"><input type="checkbox" name="llm_enabled" {{ 'checked' if llm.enabled }}> Run the AI pass after each run</label>
+<div class="row"><div><label>Provider</label><select name="llm_provider">{% for p in ['anthropic','openai'] %}<option {{ 'selected' if llm.provider == p }}>{{ p }}</option>{% endfor %}</select></div>
+<div><label>Model</label><input name="llm_model" value="{{ llm.model }}"></div>
+<div><label>$ / 1M input</label><input name="llm_pin" value="{{ llm.price_in_per_m }}" style="width:70px"></div>
+<div><label>$ / 1M output</label><input name="llm_pout" value="{{ llm.price_out_per_m }}" style="width:70px"></div></div></div>
+<div class="panel"><h2 style="margin-top:0">Defaults</h2><div class="row">
+<div><label>Samples per prompt per engine</label><input name="samples" value="{{ d.samples }}" style="width:70px"></div>
+<div><label>Alert when this % of answers repeat the last run</label><input name="identical_alert_pct" value="{{ d.identical_alert_pct }}" style="width:70px"></div></div></div>
+<button class="btn">Save settings</button></form>
+{% endblock %}

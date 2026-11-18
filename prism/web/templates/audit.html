@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<div class="row" style="justify-content:space-between"><p class="muted">Can AI read and quote {{ b.domain }}? Checks robots.txt for each AI bot, llms.txt, sitemap, and whether AI crawlers get the same page people do. Free: plain web requests, no AI calls.</p>
+<form method="post" action="{{ base }}/b/{{ b.slug }}/audit/run">{{ m.csrf_field(csrf) }}<button class="btn">Run audit now</button></form></div>
+{% if not a %}<p class="muted">No audit yet.</p>{% else %}
+<div class="cards"><div class="card"><div class="k">Score</div><div class="v">{{ a.score|num(0) }}/100</div><div class="r">{{ a.at|dt }}</div></div></div>
+<h2>Checks</h2><table><tr><th>Check</th><th>Result</th><th>Detail</th><th>Fix</th></tr>
+{% for c in a.results.checks %}<tr><td>{{ c.name }}</td><td><span class="pill {{ {'pass':'ok','warn':'warn','fail':'bad'}.get(c.status,'') }}">{{ c.status }}</span></td><td class="small">{{ c.detail }}</td><td class="small">{{ c.fix }}</td></tr>{% endfor %}</table>
+{% if a.results.pages %}<h2>Pages checked</h2><table><tr><th>Page</th><th>Browser</th><th>AI bot</th><th>Words without JS</th><th>Same for AI</th><th>Structured data</th><th>Question headings</th></tr>
+{% for p in a.results.pages %}<tr><td class="small">{{ p.url }}</td>{% if p.error %}<td colspan="6" class="small">{{ p.error }}</td>{% else %}<td>{{ p.status_browser }}</td><td>{{ p.status_ai_bot }}</td><td>{{ p.words_no_js }}</td><td>{{ 'yes' if p.same_for_ai else 'NO' }}</td><td class="small">{{ (p.jsonld_types or [])|join(', ') }}</td><td>{{ p.question_headings }}</td>{% endif %}</tr>{% endfor %}</table>{% endif %}
+{% endif %}
+{% endblock %}

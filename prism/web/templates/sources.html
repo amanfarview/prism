@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+<p class="muted">The sites AI read and cited when answering {{ b.name }}'s buyer questions. "Answers without you" shows where a source shapes answers that leave {{ b.name }} out. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/sources', days) }}</p>
+<div class="cards"><div class="card"><div class="k">Citations</div><div class="v">{{ src.total }}</div></div>
+<div class="card"><div class="k">Your own site's share</div><div class="v">{{ src.own_share|pct(1) }}</div></div></div>
+<div class="grid2" style="margin-top:14px">
+<div><h2>Most cited domains</h2>
+<table><tr><th>Domain</th><th>Whose</th><th>Citations</th><th>Share</th><th>In answers without you</th></tr>
+{% for d in src.domains %}<tr><td>{{ d.domain }}</td><td>{% if d.owner_type != 'third_party' %}<span class="pill {{ d.owner_type }}">{{ d.owner_name }}</span>{% endif %}</td><td>{{ d.count }}</td><td>{{ d.share|pct(1) }}</td><td>{{ d.without_you }}</td></tr>{% endfor %}
+</table></div>
+<div><h2>Your pages AI cites</h2>
+<table><tr><th>Page</th><th>Citations</th><th>Content item</th></tr>
+{% for u, n in src.own_pages %}{% set ref = refs.get(u, '') %}<tr><td class="small"><a href="{{ u }}" target="_blank" rel="noopener">{{ u }}</a></td><td>{{ n }}</td><td class="small">{% if ref and ref != 'unmatched' %}{% set parts = ref.split('|') %}<span class="pill ok">{{ parts[1] }}</span> <span class="muted">{{ parts[2] }}</span>{% elif ref == 'unmatched' %}<span class="muted">no match</span>{% else %}<span class="muted">connector off</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="3" class="muted">None of your pages were cited in this period.</td></tr>{% endfor %}
+</table>
+<p class="small muted">With a content connector (Command Centre &gt; Brands) each cited page is traced to the content item behind it, so editors know exactly what to improve.</p></div>
+</div>
+{% endblock %}

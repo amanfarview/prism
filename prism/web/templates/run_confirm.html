@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% import "_m.html" as m %}
+{% block content %}
+<h1>{{ b.name }}: confirm run</h1>{{ m.tabs(b, tab, base) }}
+{% set e = plan.estimate %}
+<div class="cards"><div class="card"><div class="k">Calls</div><div class="v">{{ plan.tasks }}</div><div class="r">prompts × markets × engines × {{ samples }} samples</div></div>
+<div class="card"><div class="k">Estimated cost</div><div class="v">{{ e.total|money }}</div><div class="r">from list prices in Command Centre</div></div>
+<div class="card"><div class="k">Spent this month</div><div class="v">{{ e.global_spent|money }}</div><div class="r">cap {{ e.global_cap|money }}</div></div></div>
+<h2>By engine</h2><table><tr><th>Engine</th><th>Calls</th></tr>{% for k, n in plan.engine_calls.items() %}<tr><td>{{ k }}</td><td>{{ n }}</td></tr>{% endfor %}</table>
+<h2>By provider</h2><table><tr><th>Provider</th><th>Estimate</th></tr>{% for p, c in e.by_provider.items() %}<tr><td>{{ p }}</td><td>{{ c|money }}</td></tr>{% endfor %}</table>
+{% if not e.ok %}<div class="flash err">{% for p in e.problems %}{{ p }}<br>{% endfor %}Lower the samples, pick fewer engines, or raise the cap in Budget.</div>
+{% elif plan.tasks == 0 %}<div class="flash err">Nothing to run: no enabled engines or no active prompts.</div>
+{% else %}
+<form method="post" action="{{ base }}/b/{{ b.slug }}/run/confirm">{{ m.csrf_field(csrf) }}<input type="hidden" name="samples" value="{{ samples }}">
+{% for k in keys %}<input type="hidden" name="engine" value="{{ k }}">{% endfor %}
+<p><button class="btn orange">Confirm and run ({{ e.total|money }})</button> <a href="{{ base }}/b/{{ b.slug }}/runs">Cancel</a></p>
+<p class="small muted">The run stops automatically if actual spend reaches a cap.</p></form>{% endif %}
+{% endblock %}

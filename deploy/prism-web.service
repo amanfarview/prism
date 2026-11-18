@@ -1,0 +1,14 @@
+[Unit]
+Description=Prism web (AI visibility for Farview portcos)
+After=network-online.target
+
+[Service]
+User=azureuser
+WorkingDirectory=/home/azureuser/prism
+EnvironmentFile=/home/azureuser/prism/.env
+ExecStart=/home/azureuser/prism/venv/bin/uvicorn prism.web.main:app --host 127.0.0.1 --port 8040 --workers 2 --proxy-headers
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Prism worker (scheduled and queued runs)
+After=network-online.target
+
+[Service]
+User=azureuser
+WorkingDirectory=/home/azureuser/prism
+EnvironmentFile=/home/azureuser/prism/.env
+ExecStart=/home/azureuser/prism/venv/bin/python -m prism.cli worker
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
