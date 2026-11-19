@@ -1,24 +1,51 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Portfolio{% endblock %}
 {% block content %}
-<h1>AI visibility across the portfolio</h1>
-<p class="muted">How often ChatGPT, Claude, Gemini, Perplexity and the rest name each company when buyers ask about its category. Ranges are 95% confidence; changes are only called when they're unlikely to be noise. {{ m.days_picker(base, '/', days) }}</p>
+<div class="phead">
+  <div><div class="eyebrow">Portfolio</div><h1>AI visibility across the portfolio</h1>
+  <div class="meta">How often ChatGPT, Claude, Gemini, Perplexity and the rest name each company when a buyer asks about its category.</div></div>
+  <div>{{ m.days_picker(base, '/', days) }}</div>
+</div>
+
+<div class="pgrid">
+{% for r in rows %}
+<a class="pcard" href="{{ base }}/b/{{ r.brand.slug }}">
+  <div class="top"><div class="av">{{ r.brand.name[:1] }}</div>
+    <div style="min-width:0"><div class="nm">{{ r.brand.name }}</div><div class="cat">{{ r.brand.category }}</div></div></div>
+  {% if r.answers %}
+  <div class="big"><span class="v">{{ r.rate|pct }}</span><span class="l">named in answers</span></div>
+  {{ m.cibar(r.rate, r.rate_ci, me=True) }}
+  <div class="cirange">95% range {{ r.rate_ci|ci }} · {{ r.answers }} answers</div>
+  <div class="stats">
+    <div><div class="k">Rank</div><div class="v">#{{ r.rank }} <span class="small muted">of {{ r.of }}</span></div></div>
+    <div><div class="k">Visibility</div><div class="v">{{ r.visibility|num }}</div></div>
+    <div><div class="k">Share</div><div class="v">{{ r.sov|pct }}</div></div>
+  </div>
+  <div class="foot"><span>vs previous {{ days }} days {{ m.change(r.direction) }}</span>
+    <span>{% if r.last_run %}{{ r.last_run.created_at|dt('%d %b') }} {{ m.status(r.last_run.status) }}{% else %}never run{% endif %}</span></div>
+  {% else %}
+  <div class="empty" style="padding:22px 0 10px"><b>No answers yet</b>Start a run from the company's Runs tab.</div>
+  {% endif %}
+</a>
+{% endfor %}
+</div>
+
+<h2>Side by side</h2>
 <table>
-<tr><th>Company</th><th>Named in</th><th style="width:180px">95% range</th><th>Visibility</th><th>Rank</th><th>Avg position</th><th>Share of voice</th><th>vs previous {{ days }} days</th><th>Answers</th><th>Last run</th></tr>
+<tr><th>Company</th><th class="num">Named in</th><th style="width:200px">95% range</th><th class="num">Visibility</th><th class="num">Rank</th><th class="num">Avg position</th><th class="num">Share of voice</th><th>vs previous {{ days }} days</th><th class="num">Answers</th></tr>
 {% for r in rows %}
 <tr>
-<td><a href="{{ base }}/b/{{ r.brand.slug }}"><b>{{ r.brand.name }}</b></a><div class="small muted">{{ r.brand.category }}</div></td>
-<td><b>{{ r.rate|pct }}</b></td>
-<td>{{ m.cibar(r.rate, r.rate_ci) }}<div class="small muted">{{ r.rate_ci|ci }}</div></td>
-<td>{{ r.visibility|num }}</td>
-<td>{% if r.answers %}#{{ r.rank }} of {{ r.of }}{% else %}–{% endif %}</td>
-<td>{{ r.avg_position|num }}</td>
-<td>{{ r.sov|pct }}</td>
-<td>{% set d = r.direction %}<span class="pill {{ 'ok' if d == 'up' else 'bad' if d == 'down' else '' }}">{{ d }}</span></td>
-<td>{{ r.answers }}</td>
-<td class="small">{% if r.last_run %}{{ r.last_run.created_at|dt('%d %b') }} {{ m.status(r.last_run.status) }}{% else %}never{% endif %}</td>
+<td><a href="{{ base }}/b/{{ r.brand.slug }}">{{ r.brand.name }}</a></td>
+<td class="num"><b>{{ r.rate|pct }}</b></td>
+<td>{{ m.cibar(r.rate, r.rate_ci, me=True) }}</td>
+<td class="num">{{ r.visibility|num }}</td>
+<td class="num">{% if r.answers %}#{{ r.rank }} <span class="muted small">of {{ r.of }}</span>{% else %}–{% endif %}</td>
+<td class="num">{{ r.avg_position|num }}</td>
+<td class="num">{{ r.sov|pct }}</td>
+<td>{{ m.change(r.direction) }}</td>
+<td class="num">{{ r.answers }}</td>
 </tr>
 {% endfor %}
 </table>
-<p class="small muted">Spend this month: {{ spend|money }}. {% if user.is_admin %}<a href="{{ base }}/cc/budget">Budget &amp; spend</a>{% endif %}</p>
+<p class="small muted" style="margin-top:12px">Ranges are 95% confidence; a change is only called when it's unlikely to be noise. Spend this month: <b>{{ spend|money }}</b>{% if user.is_admin %} · <a href="{{ base }}/cc/budget">Budget &amp; spend</a>{% endif %}</p>
 {% endblock %}

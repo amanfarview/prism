@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
-<p class="muted">The sites AI read and cited when answering {{ b.name }}'s buyer questions. "Answers without you" shows where a source shapes answers that leave {{ b.name }} out. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/sources', days) }}</p>
+{{ m.brand_header(b, tab, base, days, '/b/' ~ b.slug ~ '/sources') }}
+<p class="muted">The sites AI read and cited when answering {{ b.name }}'s buyer questions. "Answers without you" shows where a source shapes answers that leave {{ b.name }} out. </p>
 <div class="cards"><div class="card"><div class="k">Citations</div><div class="v">{{ src.total }}</div></div>
 <div class="card"><div class="k">Your own site's share</div><div class="v">{{ src.own_share|pct(1) }}</div></div></div>
 <div class="grid2" style="margin-top:14px">

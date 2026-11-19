@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
 {% if user.is_admin %}
 <div class="panel"><h2 style="margin-top:0">Run now</h2>
 <form method="post" action="{{ base }}/b/{{ b.slug }}/run/plan">{{ m.csrf_field(csrf) }}

@@ -1,20 +1,20 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Command Centre{% endblock %}
 {% block content %}
-<h1>Command Centre</h1>
+<div class="eyebrow">Command Centre</div><h1>Command Centre</h1>
 <p class="muted">Engines, keys, budgets and schedules for every portco. Changes here are logged in the audit log.</p>
 <div class="cards">
-<div class="card"><div class="k">Spent this month</div><div class="v">{{ spent|money }}</div><div class="r">cap {{ gcap|money }}{% if gcap %} · {{ (spent/gcap)|pct }}{% endif %}</div>
-{% if gcap %}<div class="bar" style="margin-top:6px"><i style="width:{{ [100, spent/gcap*100]|min }}%;background:{{ '#C0392B' if spent > gcap*0.8 else '#242E41' }}"></i></div>{% endif %}</div>
+<div class="card hero"><div class="k">Spent this month</div><div class="v">{{ spent|money }}</div><div class="r">cap {{ gcap|money }}{% if gcap %} · {{ (spent/gcap)|pct }}{% endif %}</div>
+{% if gcap %}<div class="bar" style="margin-top:10px;background:rgba(255,255,255,.15)"><i style="width:{{ [100, spent/gcap*100]|min }}%;background:{{ '#E07A5A' if spent > gcap*0.8 else '#D85427' }}"></i></div>{% endif %}</div>
 <div class="card"><div class="k">Active schedules</div><div class="v">{{ scheds|length }}</div><div class="r">projected {{ proj|money }} / month</div></div>
 <div class="card"><div class="k">Engines on</div><div class="v">{{ engines|selectattr('enabled')|list|length }}</div><div class="r">of {{ engines|length }}</div></div>
-<div class="card"><div class="k">Keys set</div><div class="v">{{ keys.values()|selectattr('last4')|list|length }}</div><div class="r">stored in Key Vault</div></div>
+<div class="card"><div class="k">Keys set</div><div class="v">{{ keys.values()|selectattr('last4')|list|length }}</div><div class="r">{{ {'keyvault': 'in Azure Key Vault', 'file': 'in the server secrets file (600)'}.get(backend, 'in memory (dev only)') }}</div></div>
 </div>
 {% if gcap and proj > gcap %}<div class="flash err">Active schedules are projected at {{ proj|money }} a month, above the {{ gcap|money }} cap. Scheduled runs that would break the cap are skipped; lower samples or engines in Schedules.</div>{% endif %}
 <div class="grid2" style="margin-top:14px">
 <div><h2>Engines</h2><table><tr><th>Engine</th><th>Mode</th><th>Key</th><th>On</th><th>Last test</th></tr>
-{% for e in engines %}<tr><td>{{ e.label }}</td><td><span class="pill {{ e.mode }}">{{ e.mode }}</span></td><td>{% set k = keys.get(e.provider) %}{% if e.provider == 'mock' %}<span class="muted small">none needed</span>{% elif k and k.last4 %}<span class="pill ok">…{{ k.last4 }}</span>{% else %}<span class="pill bad">missing</span>{% endif %}</td><td>{{ 'yes' if e.enabled else '' }}</td><td>{% if e.last_test_ok is not none %}<span class="pill {{ 'ok' if e.last_test_ok else 'bad' }}">{{ 'ok' if e.last_test_ok else 'failed' }}</span>{% endif %}</td></tr>{% endfor %}</table>
-<p><a href="{{ base }}/cc/engines">Manage engines</a></p></div>
+{% for e in engines %}<tr><td>{{ e.label }}</td><td><span class="pill {{ e.mode }}">{{ e.mode }}</span></td><td>{% set k = keys.get(e.provider) %}{% if e.provider == 'mock' %}<span class="muted small">none needed</span>{% elif k and k.last4 %}<span class="pill ok">…{{ k.last4 }}</span>{% else %}<span class="pill bad">missing</span>{% endif %}</td><td>{% if e.enabled %}<span class="pill ok dot">on</span>{% else %}<span class="muted small">off</span>{% endif %}</td><td>{% if e.last_test_ok is not none %}<span class="pill {{ 'ok' if e.last_test_ok else 'bad' }}">{{ 'ok' if e.last_test_ok else 'failed' }}</span>{% endif %}</td></tr>{% endfor %}</table>
+<p style="margin-top:10px"><a class="btn ghost small" href="{{ base }}/cc/engines">Manage engines →</a></p></div>
 <div><h2>Spend by provider this month</h2><table><tr><th>Provider</th><th>Spent</th><th>Cap</th></tr>
 {% for p, v in by_prov.items() %}<tr><td>{{ p }}</td><td>{{ v|money }}</td><td>{{ pcaps.get(p)|money if p in pcaps else '–' }}</td></tr>{% else %}<tr><td colspan="3" class="muted">Nothing spent yet.</td></tr>{% endfor %}</table>
 <h2>Recent runs</h2><table><tr><th>Run</th><th>Brand</th><th>Status</th><th>Cost</th></tr>

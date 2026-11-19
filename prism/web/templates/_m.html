@@ -1,5 +1,16 @@
-{% macro cibar(rate, ci) -%}
-<div class="bar" title="{{ rate|pct }} (95% range {{ ci|ci }})"><b style="left:{{ (ci[0]*100)|round(1) }}%;width:{{ ((ci[1]-ci[0])*100)|round(1) }}%"></b><i style="width:{{ (rate*100)|round(1) }}%;opacity:.85;height:4px;top:2px"></i></div>
+{# rate with its 95% range: a band for the range, a dot for the estimate. me=True for the portco itself #}
+{% macro cibar(rate, ci, me=False) -%}
+<div class="ci {{ 'me' if me }}" title="{{ rate|pct }} (95% range {{ ci|ci }})"><span class="band" style="left:{{ (ci[0]*100)|round(1) }}%;width:{{ ((ci[1]-ci[0])*100)|round(1) }}%"></span><span class="dot" style="left:{{ (rate*100)|round(1) }}%"></span></div>
+{%- endmacro %}
+
+{# brand page header: eyebrow, name, category and domain, period picker on the right, then the tabs #}
+{% macro brand_header(b, tab, base, days=None, path=None) -%}
+<div class="phead">
+  <div><div class="eyebrow">Portfolio company</div><h1>{{ b.name }}</h1>
+  <div class="meta">{{ b.category }}{% if b.domain %} · <a href="https://{{ b.domain }}" rel="noopener noreferrer" target="_blank">{{ b.domain }}</a>{% endif %}</div></div>
+  {% if days and path %}<div>{{ days_picker(base, path, days) }}</div>{% endif %}
+</div>
+{{ tabs(b, tab, base) }}
 {%- endmacro %}
 
 {% macro tabs(b, tab, base) -%}
@@ -13,10 +24,13 @@
 {% macro csrf_field(csrf) %}<input type="hidden" name="csrf" value="{{ csrf }}">{% endmacro %}
 
 {% macro status(s) -%}
-<span class="pill {{ {'done':'ok','partial':'warn','budget_stopped':'bad','failed':'bad','blocked':'bad','queued':'','running':'warn','planned':''}.get(s,'') }}">{{ s.replace('_',' ') }}</span>
+<span class="pill dot {{ {'done':'ok','partial':'warn','budget_stopped':'bad','failed':'bad','blocked':'bad','queued':'','running':'warn','planned':''}.get(s,'') }}">{{ s.replace('_',' ') }}</span>
+{%- endmacro %}
+
+{% macro change(d) -%}
+<span class="pill {{ 'ok' if d == 'up' else 'bad' if d == 'down' else '' }}">{{ '▲ up' if d == 'up' else '▼ down' if d == 'down' else d }}</span>
 {%- endmacro %}
 
 {% macro days_picker(base, path, days) -%}
-<span class="small muted">Period:</span>
-{% for d in [7,30,90] %}<a class="pill {{ 'ok' if d == days }}" href="{{ base }}{{ path }}?days={{ d }}">{{ d }} days</a> {% endfor %}
+<span class="seglabel">Period</span><span class="seg">{% for d in [7,30,90] %}<a class="{{ 'on' if d == days }}" href="{{ base }}{{ path }}?days={{ d }}">{{ d }}d</a>{% endfor %}</span>
 {%- endmacro %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Brands{% endblock %}
 {% block content %}
-<h1>Brands</h1>
+<div class="eyebrow">Command Centre</div><h1>Brands</h1>
 <table><tr><th>Name</th><th>Domain</th><th>Category</th><th>Competitors</th><th>Prompts</th><th>Markets</th><th>Active</th></tr>
 {% for b in rows %}<tr><td><a href="{{ base }}/cc/brands/{{ b.slug }}">{{ b.name }}</a></td><td>{{ b.domain }}</td><td class="small">{{ b.category }}</td><td>{{ b.competitors|selectattr('active')|list|length }}</td><td>{{ b.prompts|selectattr('active')|list|length }}</td><td>{{ b.markets|selectattr('active')|map(attribute='label')|join(', ') }}</td><td>{{ 'yes' if b.active else '' }}</td></tr>{% endfor %}</table>
 <div class="panel" style="margin-top:14px"><h2 style="margin-top:0">Add a brand</h2>

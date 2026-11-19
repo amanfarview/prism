@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}{{ b.name }}{% endblock %}
 {% block content %}
-<h1>{{ b.name }}</h1><p><a href="{{ base }}/b/{{ b.slug }}">Open dashboard</a></p>
+<div class="eyebrow">Command Centre</div><h1>{{ b.name }}</h1><p><a href="{{ base }}/b/{{ b.slug }}">Open dashboard</a></p>
 <div class="grid2">
 <div class="panel"><h2 style="margin-top:0">Brand</h2><form method="post" action="{{ base }}/cc/brands/{{ b.slug }}/save">{{ m.csrf_field(csrf) }}
 <label>Name</label><input name="name" value="{{ b.name }}" style="width:100%">

@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
 <h2>Prompt ideas from search data</h2>
 {% if not sugg %}<p class="muted">Nothing question-like or comparison-shaped found in that file.</p>{% else %}
 <form method="post" action="{{ base }}/b/{{ b.slug }}/prompts/import/confirm">{{ m.csrf_field(csrf) }}

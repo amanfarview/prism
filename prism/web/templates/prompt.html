@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Prompt{% endblock %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
 <h2 style="margin-top:0">“{{ p.text }}”</h2>
 <p class="muted">{{ total }} answers in the last {{ days }} days{% if total > 150 %}, newest 150 shown{% endif %}. Every answer is stored exactly as the engine returned it.
 <span class="small"><mark class="self">{{ b.name }}</mark> <mark class="comp">competitor</mark></span></p>
