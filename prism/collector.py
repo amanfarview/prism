@@ -72,7 +72,7 @@ def _markets(brand: Brand) -> list[Market | None]:
 
 
 def _engines(s, keys: list[str] | None) -> list[Engine]:
-    q = select(Engine).where(Engine.enabled.is_(True))
+    q = select(Engine).where(Engine.enabled == True)
     if keys:
         q = q.where(Engine.key.in_(keys))
     return list(s.scalars(q))

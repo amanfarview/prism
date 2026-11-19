@@ -96,7 +96,7 @@ class Filter:
 
 
 def answers_for(s, f: Filter) -> list[Answer]:
-    q = select(Answer).where(Answer.brand_id == f.brand_id, Answer.status == "ok", Answer.analysed.is_(True))
+    q = select(Answer).where(Answer.brand_id == f.brand_id, Answer.status == "ok", Answer.analysed == True)
     if f.since:
         q = q.where(Answer.created_at >= f.since)
     if f.until:

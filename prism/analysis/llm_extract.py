@@ -84,7 +84,7 @@ def extract_run(s, run_id: int, user: str = "system") -> dict:
     if not cfg.get("enabled"):
         return {"skipped": "AI extraction is off (Command Centre > Settings)"}
     answers = list(s.scalars(select(Answer).where(Answer.run_id == run_id, Answer.status == "ok",
-                                                  Answer.llm_analysed.is_(False))))
+                                                  Answer.llm_analysed == False)))
     if not answers:
         return {"done": 0}
     brand = s.get(Brand, answers[0].brand_id)

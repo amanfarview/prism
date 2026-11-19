@@ -46,7 +46,7 @@ def tick() -> list[int]:
     queued: list[int] = []
     with session_scope() as s:
         t = now()
-        for sch in s.scalars(select(Schedule).where(Schedule.active.is_(True))):
+        for sch in s.scalars(select(Schedule).where(Schedule.active == True)):
             if sch.next_run_at is None:
                 sch.next_run_at = next_run_time(sch, t)
                 continue

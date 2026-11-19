@@ -38,7 +38,7 @@ def _r(x, d=4):
 @router.get("/brands")
 def brands(s=Depends(get_db), u=Depends(caller)):
     return [{"slug": b.slug, "name": b.name, "domain": b.domain, "category": b.category}
-            for b in s.scalars(select(Brand).where(Brand.active.is_(True)).order_by(Brand.name))]
+            for b in s.scalars(select(Brand).where(Brand.active == True).order_by(Brand.name))]
 
 
 @router.get("/brands/{slug}/summary")

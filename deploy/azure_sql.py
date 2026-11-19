@@ -125,6 +125,37 @@ def cmd_test() -> None:
             ids = list(range(1, 2600))  # more than SQL Server's 2,100-parameter limit
             mentions_by_answer(s, ids)
         say("OK", f"reports work ({sm['answers']} answers summarised; {n} stored; 2,599-id IN list fine)")
+        # every page, API endpoint and MCP tool against SQL Server: the same list as tests/test_web.py
+        os.environ.update({"PRISM_AUTH_MODE": "dev", "PRISM_PUBLIC_URL": "http://localhost:8040/prism"})
+        from prism.config import get_settings
+        get_settings.cache_clear()
+        import logging
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        from fastapi.testclient import TestClient
+
+        from prism import mcp_server
+        from prism.web.app import create_app
+        pages = ["/prism/", "/prism/b/amplience", "/prism/b/amplience/prompts", "/prism/b/amplience/sources",
+                 "/prism/b/amplience/facts", "/prism/b/amplience/actions", "/prism/b/amplience/impact",
+                 "/prism/b/amplience/audit", "/prism/b/amplience/crawlers", "/prism/b/amplience/runs",
+                 "/prism/cc/", "/prism/cc/engines", "/prism/cc/keys", "/prism/cc/budget", "/prism/cc/schedules",
+                 "/prism/cc/brands", "/prism/cc/brands/amplience", "/prism/cc/settings", "/prism/cc/tokens",
+                 "/prism/cc/audit", "/prism/b/amplience/export.csv", "/prism/healthz/ready"]
+        pages += [f"/prism/api/v1/brands/amplience/{x}" for x in
+                  ("summary", "engines", "prompts", "answers", "sources", "actions", "claims")] + ["/prism/api/v1/brands"]
+        bad = []
+        with TestClient(create_app()) as c:
+            for p in pages:
+                r = c.get(p)
+                if r.status_code != 200:
+                    bad.append(f"{p} {r.status_code}")
+        for tool in ("brand_summary", "engine_breakdown", "weakest_prompts", "top_sources", "recommended_actions"):
+            try:
+                getattr(mcp_server, tool)("amplience")
+            except Exception as e:  # noqa: BLE001
+                bad.append(f"MCP {tool}: {type(e).__name__}: {str(e)[:150]}")
+        mcp_server.list_brands()
+        say("OK" if not bad else "FAIL", f"{len(pages)} pages/API calls and 6 MCP tools" + (": " + "; ".join(bad) if bad else " all answer"))
         with eng.connect() as c:
             kinds = {r[0] for r in c.execute(text(
                 "SELECT DISTINCT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'prism_test'"))}

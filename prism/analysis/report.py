@@ -93,7 +93,7 @@ def trend(s, brand: Brand, days: int = 120) -> dict:
     overall = {}
     for r in runs:
         ans = list(s.scalars(select(Answer).where(Answer.run_id == r.id, Answer.status == "ok",
-                                                  Answer.analysed.is_(True))))
+                                                  Answer.analysed == True)))
         if not ans:
             continue
         mba = mentions_by_answer(s, [a.id for a in ans])
@@ -188,7 +188,7 @@ def other_brands(s, brand: Brand, days: int = 60, limit: int = 15) -> list[tuple
 
 def portfolio(s, days: int = 30) -> list[dict]:
     out = []
-    for b in s.scalars(select(Brand).where(Brand.active.is_(True)).order_by(Brand.name)):
+    for b in s.scalars(select(Brand).where(Brand.active == True).order_by(Brand.name)):
         sm = brand_summary(s, b, days)
         out.append(sm)
     return out
@@ -196,7 +196,7 @@ def portfolio(s, days: int = 30) -> list[dict]:
 
 def prompt_counts(s, brand: Brand) -> tuple[int, int]:
     total = s.scalar(select(func.count(Prompt.id)).where(Prompt.brand_id == brand.id)) or 0
-    active = s.scalar(select(func.count(Prompt.id)).where(Prompt.brand_id == brand.id, Prompt.active.is_(True))) or 0
+    active = s.scalar(select(func.count(Prompt.id)).where(Prompt.brand_id == brand.id, Prompt.active == True)) or 0
     return active, total
 
 
