@@ -12,6 +12,10 @@ def _isolate_settings(monkeypatch, tmp_path):
     """Tests ignore the server's .env: env secrets, dev auth, temp secrets file."""
     monkeypatch.setenv("PRISM_SECRET_BACKEND", "env")
     monkeypatch.setenv("PRISM_AUTH_MODE", "dev")
+    monkeypatch.setenv("PRISM_PUBLIC_URL", "http://localhost:8040/prism")
+    monkeypatch.setenv("PRISM_SESSION_SECRET", "test-session-secret-" + "x" * 40)
+    monkeypatch.setenv("PRISM_ENVIRONMENT", "dev")
+    monkeypatch.setenv("PRISM_BLOCK_PRIVATE_FETCH", "false")  # tests mock HTTP; tests/test_security.py covers the guard
     monkeypatch.setenv("PRISM_SECRETS_FILE", str(tmp_path / "secrets.json"))
     monkeypatch.delenv("PRISM_ENTRA_CLIENT_SECRET", raising=False)
     from prism.config import get_settings

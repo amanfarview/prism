@@ -15,6 +15,7 @@ import httpx
 from sqlalchemy import select
 
 from ..models import Answer, Brand, Citation, SiteAudit
+from ..netguard import safe_client
 
 AI_BOTS = {
     "GPTBot": "OpenAI (training)", "OAI-SearchBot": "OpenAI (ChatGPT search)", "ChatGPT-User": "OpenAI (user fetch)",
@@ -100,7 +101,7 @@ def run_audit(s, brand: Brand, max_pages: int = 8, timeout: int = 20) -> SiteAud
                                                                          "fix": "Add the brand's domain."}]})
         s.add(a)
         return a
-    with httpx.Client(follow_redirects=True, timeout=timeout) as client:
+    with safe_client(timeout=timeout) as client:  # SSRF-guarded: see prism/netguard.py
         try:
             rb = client.get(urljoin(base, "/robots.txt"), headers={"User-Agent": BROWSER_UA})
             robots = rb.text if rb.status_code == 200 else ""

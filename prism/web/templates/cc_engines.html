@@ -24,7 +24,7 @@
 </div>
 <details><summary class="small">Advanced settings (JSON)</summary><textarea name="settings" rows="3">{{ e.settings|tojson }}</textarea></details>
 <p><button class="btn small">Save</button></p></form>
-{% if e.provider != 'mock' %}<form method="post" action="{{ base }}/cc/engines/{{ e.key }}/test" onsubmit="return confirm('Make one real call to {{ e.label }}? Costs about {{ e.est_cost()|cost }}.')">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Test (1 call ≈ {{ e.est_cost()|cost }})</button></form>{% endif %}
+{% if e.provider != 'mock' %}<form method="post" action="{{ base }}/cc/engines/{{ e.key }}/test" data-confirm="Make one real call to {{ e.label }}? Costs about {{ e.est_cost()|cost }}.">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Test (1 call ≈ {{ e.est_cost()|cost }})</button></form>{% endif %}
 </div>
 {% endfor %}
 {% endblock %}

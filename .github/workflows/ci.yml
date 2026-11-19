@@ -1,15 +1,62 @@
-name: ci
+# Prism's automatic checks (Nov 2026, Orbit's pattern). On every push and pull request. With branch protection on
+# main, a pull request can't merge until all three are green; deploy/update.sh only ever deploys main.
+name: CI
+
 on:
   push:
+    branches: ["**"]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  tests:
+    name: Tests
+    runs-on: ubuntu-22.04          # same Ubuntu and Python (3.10) as the Jarvis VM
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: sudo apt-get update && sudo apt-get install -y unixodbc-dev
-      - run: pip install -r requirements.txt
-      - run: python -m pytest -q
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: System libraries (pyodbc)
+        run: sudo apt-get install -y -q unixodbc-dev
+      - name: Install
+        run: pip install -r requirements-dev.txt
+      - name: Tests
+        run: python -m pytest -q -p no:warnings
+
+  security:
+    name: Dependency audit and secrets guard
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Known vulnerabilities in pinned packages (pip-audit)
+        run: pip install -q pip-audit==2.9.0 && pip-audit -r requirements.txt --progress-spinner off
+      - name: No settings, databases or keys committed
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env$|(^|/)\.env\.|^data/|\.db$|\.sqlite3?$|secrets\.json$|\.pem$|\.key$' | grep -v '^\.env\.example$' || true)
+          [ -z "$bad" ] || { echo "Committed files that must never be in git:"; echo "$bad"; exit 1; }
+          if git grep -nE 'BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}|xai-[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}' -- . ':!tests/*'; then
+            echo "Something that looks like a key is committed (above)."; exit 1
+          fi
+
+  deploy-scripts:
+    name: Deploy scripts (shellcheck)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck -S warning deploy/*.sh deploy/prism

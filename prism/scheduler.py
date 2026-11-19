@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from sqlalchemy import select
 
@@ -82,14 +83,38 @@ def tick() -> list[int]:
     return done
 
 
+def recover_interrupted() -> list[int]:
+    """Runs left 'running' by a stopped worker (deploy, reboot, crash). Only this worker executes runs in
+    production, so at start-up anything still 'running' was interrupted. Answers already collected are kept."""
+    fixed = []
+    with session_scope() as s:
+        for r in s.scalars(select(Run).where(Run.status == "running")):
+            r.status = "partial" if (r.done_calls or 0) > 0 else "failed"
+            r.finished_at = r.finished_at or now()
+            r.note = ((r.note or "") + " Interrupted by a worker restart; answers collected before it are kept.").strip()
+            audit(s, "scheduler", "run_interrupted", run=r.id, status=r.status)
+            fixed.append(r.id)
+    if fixed:
+        notify("runs interrupted", f"Run(s) {', '.join(map(str, fixed))} were cut short by a worker restart.")
+    return fixed
+
+
 def loop(interval: int = 30) -> None:  # pragma: no cover - long running
     init_db()
     with session_scope() as s:
         ensure_defaults(s)
+    recover_interrupted()
     log.info("Prism worker started")
+    beat = heartbeat_path()
     while True:
         try:
             tick()
+            beat.touch()  # deploy/healthcheck.py alerts if this goes stale (worker stuck or crash-looping)
         except Exception as e:
             log.exception("worker tick failed: %s", e)
         time.sleep(interval)
+
+
+def heartbeat_path() -> Path:
+    from .config import get_settings
+    return Path(get_settings().secrets_file).resolve().parent / "worker.heartbeat"

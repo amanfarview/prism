@@ -16,7 +16,7 @@
 </div>
 <div><h2>Fact sheet</h2>
 <table><tr><th>Attribute</th><th>Correct value</th><th>Known wrong patterns</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
-{% for f in facts %}<tr><td><b>{{ f.attribute }}</b><div class="small muted">{{ f.source }}</div></td><td class="small">{{ f.value }}</td><td class="small"><code>{{ (f.wrong_patterns or [])|join('</code><br><code>')|safe }}</code></td>
+{% for f in facts %}<tr><td><b>{{ f.attribute }}</b><div class="small muted">{{ f.source }}</div></td><td class="small">{{ f.value }}</td><td class="small">{% for wp in (f.wrong_patterns or []) %}<code>{{ wp }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
 {% if user.is_admin %}<td><form method="post" action="{{ base }}/b/{{ b.slug }}/facts/{{ f.id }}/delete">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Delete</button></form></td>{% endif %}</tr>
 {% else %}<tr><td colspan="4" class="muted">No facts yet.</td></tr>{% endfor %}</table>
 {% if user.is_admin %}<div class="panel" style="margin-top:12px"><form method="post" action="{{ base }}/b/{{ b.slug }}/facts/save">{{ m.csrf_field(csrf) }}

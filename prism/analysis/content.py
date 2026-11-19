@@ -11,23 +11,28 @@ which an editor can open and improve.
 """
 from __future__ import annotations
 
+import re
 from functools import lru_cache
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import httpx
 from sqlalchemy import select
 
 from ..common import get_setting
 from ..models import Answer, Brand, Citation
+from ..netguard import safe_get
 
 
 @lru_cache(maxsize=4096)
 def _amplience_lookup(hub: str, key: str) -> str:
     if not key:
         key = "home"
-    url = f"https://{hub}.cdn.content.amplience.net/content/key/{key}"
+    # the hub name becomes part of a hostname and the key part of a path: accept only what Amplience allows
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", hub or "") or ".." in key:
+        return ""
+    url = f"https://{hub}.cdn.content.amplience.net/content/key/{quote(key, safe='/-_.~')}"
     try:
-        r = httpx.get(url, params={"depth": "root", "format": "inlined"}, timeout=10)
+        r = safe_get(url, params={"depth": "root", "format": "inlined"}, timeout=10)
     except httpx.HTTPError:
         return ""
     if r.status_code != 200:

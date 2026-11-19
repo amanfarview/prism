@@ -46,6 +46,9 @@ fact sheet contradicts the statement; "unverifiable" when the fact sheet does no
 
 def _call(cfg: dict, prompt: str) -> tuple[dict, int, int]:
     provider, model = cfg.get("provider", "anthropic"), cfg.get("model")
+    from ..config import get_settings
+    if get_settings().is_staging:
+        raise RuntimeError("Staging never makes paid calls")
     key = get_secret(SECRET_NAMES[provider])
     if not key:
         raise RuntimeError(f"No {provider} key for AI extraction")

@@ -1,0 +1,17 @@
+# Weekly pull requests for Python packages, monthly for GitHub Actions. CI must be green before merging;
+# then deploy with deploy/update.sh (staging first: update.sh --staging). Security fixes come as soon as published.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

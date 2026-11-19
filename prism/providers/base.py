@@ -83,6 +83,8 @@ class Adapter:
     name: str = ""
 
     def key(self) -> str:
+        if get_settings().is_staging:
+            raise ProviderError("Staging never makes paid calls (demo engines only).")
         k = get_secret(SECRET_NAMES[self.provider])
         if not k:
             raise ProviderError(f"No API key set for {self.provider}. Add it in Command Centre > Keys.")

@@ -1,0 +1,54 @@
+[Unit]
+Description=Prism health check: web, MCP, worker heartbeat, runs, budget; posts to Teams only when something is wrong
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=prism
+Group=prism
+WorkingDirectory=/var/www/prism
+EnvironmentFile=/etc/prism/prism.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+StateDirectory=prism
+StateDirectoryMode=0700
+ExecStart=/opt/prism-venv/bin/python /var/www/prism/deploy/healthcheck.py check
+TimeoutStopSec=30
+
+# ---- resources: a B2s VM shared with Orbit, Flo, Jarvis, PortfolioIQ ----
+MemoryHigh=256M
+MemoryMax=512M
+TasksMax=256
+LimitNOFILE=4096
+# ---- isolation (SERVER_OPERATIONS.md section 2; Nov 2026 Prism hardening) ----
+# Own service user; reads its code and venv but can't change them; writes only to its state directory.
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+RemoveIPC=true
+KeyringMode=private
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# Azure's metadata endpoint hands out the VM identity's tokens (Key Vault, Azure SQL...). Prism never needs it,
+# and its site audit fetches outside URLs, so the second lock against SSRF is here (the first is prism/netguard.py).
+IPAddressDeny=169.254.169.254/32
+

@@ -2,7 +2,7 @@
 
 Read-only. Two ways to run:
   python -m prism.mcp_server            # stdio, e.g. Claude Code on the VM
-  python -m prism.mcp_server --http     # streamable HTTP on 127.0.0.1:8041 behind nginx,
+  python -m prism.mcp_server --http     # streamable HTTP on 127.0.0.1:8041 behind Caddy,
                                         # every request needs a Prism API token (Bearer)
 """
 from __future__ import annotations
@@ -84,26 +84,54 @@ def recommended_actions(slug: str, days: int = 30) -> list[dict]:
         return [{"title": a.title, "why": a.why, "steps": a.steps} for a in actions_mod.build(s, _brand(s, slug), days)]
 
 
-def _http():  # pragma: no cover
-    import uvicorn
+def _transport_security():
+    """The SDK's default for a 127.0.0.1 server accepts only Host: localhost, so every request arriving through
+    Caddy (Host: jarvis.farviewequity.com) got 421. Allow exactly the public host as well."""
+    from .config import get_settings
+    host = get_settings().public_host
+    try:
+        from mcp.server.transport_security import TransportSecuritySettings
+    except ImportError:  # very old SDK: nothing to configure
+        return None
+    hosts = ["127.0.0.1:*", "localhost:*"] + ([host] if host else [])
+    origins = ["http://127.0.0.1:*", "http://localhost:*"] + ([f"https://{host}"] if host else [])
+    return TransportSecuritySettings(enable_dns_rebinding_protection=True, allowed_hosts=hosts, allowed_origins=origins)
 
+
+def build_http_app():
+    """Streamable HTTP app behind a token check. Every request needs a Prism API token (Bearer)."""
     from .web.auth import token_user
-    app = server.streamable_http_app()
+    sec = _transport_security()
+    try:  # mcp >= 2
+        app = server.streamable_http_app(transport_security=sec, host="127.0.0.1")
+    except TypeError:  # mcp 1.x: settings live on the server object
+        if sec is not None and hasattr(server, "settings"):
+            server.settings.transport_security = sec
+        app = server.streamable_http_app()
 
     async def guarded(scope, receive, send):
         if scope["type"] == "http":
-            hdr = dict(scope.get("headers") or []).get(b"authorization", b"").decode()
+            if scope.get("path") == "/mcp/":  # Caddy strips /prism; accept /prism/mcp and /prism/mcp/
+                scope = {**scope, "path": "/mcp", "raw_path": b"/mcp"}
+            hdr = dict(scope.get("headers") or []).get(b"authorization", b"").decode("latin-1")
             with session_scope() as s:
                 ok = token_user(s, hdr) is not None
             if not ok:
                 await send({"type": "http.response.start", "status": 401,
-                            "headers": [(b"content-type", b"application/json")]})
+                            "headers": [(b"content-type", b"application/json"), (b"www-authenticate", b"Bearer")]})
                 await send({"type": "http.response.body", "body": b'{"error":"token required"}'})
                 return
         await app(scope, receive, send)
 
+    return guarded
+
+
+def _http():  # pragma: no cover
+    import uvicorn
+
     from .config import get_settings
-    uvicorn.run(guarded, host="127.0.0.1", port=get_settings().mcp_port)
+    uvicorn.run(build_http_app(), host="127.0.0.1", port=get_settings().mcp_port, proxy_headers=True,
+                forwarded_allow_ips="127.0.0.1")
 
 
 if __name__ == "__main__":  # pragma: no cover
