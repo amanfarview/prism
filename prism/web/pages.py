@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from markupsafe import Markup
 from sqlalchemy import func, select
 
@@ -20,7 +20,8 @@ from ..budget import month_spend
 from ..collector import execute_run, plan_run
 from ..common import audit
 from ..config import get_settings
-from ..models import (Answer, Brand, Change, Citation, Claim, CrawlerHit, Engine, Fact, Prompt, Run, SiteAudit, now)
+from ..models import (Answer, Brand, Change, Citation, Claim, CrawlerHit, Engine, Fact, Prompt, Run, SiteAudit,
+                      SiteLogo, now)
 from .app import flash, get_db, redirect, render, require_admin, require_user
 from .auth import check_csrf
 
@@ -55,6 +56,20 @@ def highlight(text: str, brand: Brand) -> Markup:
     return Markup("".join(out))
 
 
+# ---------------------------------------------------------------- logos
+@router.get("/logo/{domain}")
+def logo(domain: str, s=Depends(get_db), user=Depends(require_user)):
+    """A company's icon, served by Prism (never hot-linked). Sandboxed even if opened on its own."""
+    from ..analysis.logos import normalise, sniff
+    row = s.get(SiteLogo, normalise(domain))
+    if not row or not row.data or not sniff(row.data):
+        raise HTTPException(404, "no logo")
+    return Response(row.data, media_type=sniff(row.data), headers={
+        "Cache-Control": "private, max-age=86400",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+        "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline"})
+
+
 # ---------------------------------------------------------------- portfolio
 @router.get("/")
 def portfolio(request: Request, days: int = 30, s=Depends(get_db), user=Depends(require_user)):
@@ -73,8 +88,10 @@ def overview(request: Request, slug: str, days: int = 30, s=Depends(get_db), use
     tr = report.trend(s, b, max(days * 4, 90))
     acts = actions_mod.build(s, b, days)[:5]
     runs = list(s.scalars(select(Run).where(Run.brand_id == b.id).order_by(Run.id.desc()).limit(5)))
+    doms = {c.name: c.domain for c in b.competitors}
+    doms[b.name] = b.domain
     return render(request, "brand.html", s, user, b=b, sm=sm, eng=eng, mvs=mvs, trend=tr, acts=acts, runs=runs,
-                  days=days, tab="overview")
+                  days=days, doms=doms, tab="overview")
 
 
 # ---------------------------------------------------------------- prompts

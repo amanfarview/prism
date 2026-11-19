@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% import "_m.html" as m %}
+{% extends "base.html" %}{% import "_m.html" as m with context %}
 {% block content %}
 {{ m.brand_header(b, tab, base) }}
 <div class="row" style="justify-content:space-between"><p class="muted">Can AI read and quote {{ b.domain }}? Checks robots.txt for each AI bot, llms.txt, sitemap, and whether AI crawlers get the same page people do. Free: plain web requests, no AI calls.</p>

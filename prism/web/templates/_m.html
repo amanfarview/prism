@@ -3,11 +3,19 @@
 <div class="ci {{ 'me' if me }}" title="{{ rate|pct }} (95% range {{ ci|ci }})"><span class="band" style="left:{{ (ci[0]*100)|round(1) }}%;width:{{ ((ci[1]-ci[0])*100)|round(1) }}%"></span><span class="dot" style="left:{{ (rate*100)|round(1) }}%"></span></div>
 {%- endmacro %}
 
-{# brand page header: eyebrow, name, category and domain, period picker on the right, then the tabs #}
+{# a company's logo (served by Prism from /logo/<domain>), or its initial when there isn't one. Needs logos + base:
+   templates import this file "with context". Sizes: xs 18px, sm 20px, md 38px, lg 52px #}
+{% macro logo(domain, name, size='md') -%}
+{%- set d = domain|dom -%}
+{%- if d and logos is defined and d in logos -%}<img class="lg lg-{{ size }}" src="{{ base }}/logo/{{ d }}" alt="{{ name }}" loading="lazy">
+{%- else -%}<span class="lg lg-{{ size }} ini" aria-hidden="true">{{ (name or '?')[:1]|upper }}</span>{%- endif -%}
+{%- endmacro %}
+
+{# brand page header: logo, eyebrow, name, category and domain, period picker on the right, then the tabs #}
 {% macro brand_header(b, tab, base, days=None, path=None) -%}
 <div class="phead">
-  <div><div class="eyebrow">Portfolio company</div><h1>{{ b.name }}</h1>
-  <div class="meta">{{ b.category }}{% if b.domain %} · <a href="https://{{ b.domain }}" rel="noopener noreferrer" target="_blank">{{ b.domain }}</a>{% endif %}</div></div>
+  <div class="pid">{{ logo(b.domain, b.name, 'lg') }}<div><div class="eyebrow">Portfolio company</div><h1>{{ b.name }}</h1>
+  <div class="meta">{{ b.category }}{% if b.domain %} · <a href="https://{{ b.domain }}" rel="noopener noreferrer" target="_blank">{{ b.domain }}</a>{% endif %}</div></div></div>
   {% if days and path %}<div>{{ days_picker(base, path, days) }}</div>{% endif %}
 </div>
 {{ tabs(b, tab, base) }}

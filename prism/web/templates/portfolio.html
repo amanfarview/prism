@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% import "_m.html" as m %}
+{% extends "base.html" %}{% import "_m.html" as m with context %}
 {% block title %}Portfolio{% endblock %}
 {% block content %}
 <div class="phead">
@@ -10,7 +10,7 @@
 <div class="pgrid">
 {% for r in rows %}
 <a class="pcard" href="{{ base }}/b/{{ r.brand.slug }}">
-  <div class="top"><div class="av">{{ r.brand.name[:1] }}</div>
+  <div class="top">{{ m.logo(r.brand.domain, r.brand.name, 'md') }}
     <div style="min-width:0"><div class="nm">{{ r.brand.name }}</div><div class="cat">{{ r.brand.category }}</div></div></div>
   {% if r.answers %}
   <div class="big"><span class="v">{{ r.rate|pct }}</span><span class="l">named in answers</span></div>
@@ -35,7 +35,7 @@
 <tr><th>Company</th><th class="num">Named in</th><th style="width:200px">95% range</th><th class="num">Visibility</th><th class="num">Rank</th><th class="num">Avg position</th><th class="num">Share of voice</th><th>vs previous {{ days }} days</th><th class="num">Answers</th></tr>
 {% for r in rows %}
 <tr>
-<td><a href="{{ base }}/b/{{ r.brand.slug }}">{{ r.brand.name }}</a></td>
+<td><a class="withlogo" href="{{ base }}/b/{{ r.brand.slug }}">{{ m.logo(r.brand.domain, r.brand.name, 'xs') }}{{ r.brand.name }}</a></td>
 <td class="num"><b>{{ r.rate|pct }}</b></td>
 <td>{{ m.cibar(r.rate, r.rate_ci, me=True) }}</td>
 <td class="num">{{ r.visibility|num }}</td>

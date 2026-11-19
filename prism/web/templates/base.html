@@ -6,6 +6,7 @@
 <script src="{{ base }}/static/chart.umd.js" defer></script>
 <script src="{{ base }}/static/app.js" defer></script>
 </head><body><div class="shell">
+{%- import "_m.html" as mm with context -%}
 {%- macro icon(name) -%}
 <svg viewBox="0 0 24 24" aria-hidden="true">{{ {
  'grid': '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -25,7 +26,7 @@
   <a class="brandmark" href="{{ base }}/"><img src="{{ base }}/static/farview-mark.png" alt=""><span><span class="name">Prism</span><br><span class="by">AI visibility · Farview</span></span></a>
   <h4>Portfolio</h4>
   <a class="nav {{ 'on' if request.url.path.rstrip('/') == base }}" href="{{ base }}/">{{ icon('grid') }}All companies</a>
-  {% for nb in brands_nav %}<a class="nav {{ 'on' if (request.url.path ~ '/').startswith(base ~ '/b/' ~ nb.slug ~ '/') }}" href="{{ base }}/b/{{ nb.slug }}"><span class="init">{{ nb.name[:1] }}</span>{{ nb.name }}</a>{% endfor %}
+  {% for nb in brands_nav %}<a class="nav {{ 'on' if (request.url.path ~ '/').startswith(base ~ '/b/' ~ nb.slug ~ '/') }}" href="{{ base }}/b/{{ nb.slug }}">{{ mm.logo(nb.domain, nb.name, 'sm') }}{{ nb.name }}</a>{% endfor %}
   {% if user.is_admin %}
   <h4>Command Centre</h4>
   <a class="nav {{ 'on' if cc == 'home' }}" href="{{ base }}/cc/">{{ icon('gauge') }}Overview</a>

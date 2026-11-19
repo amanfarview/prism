@@ -299,6 +299,40 @@ async def connector_save(request: Request, slug: str, s=Depends(get_db), user=De
     return redirect(f"/cc/brands/{slug}")
 
 
+@router.post("/brands/{slug}/logos/fetch")
+def logos_fetch(request: Request, slug: str, csrf: str = Form(""), s=Depends(get_db), user=Depends(require_admin)):
+    """Fetch the brand's and its competitors' icons again from their own sites (free; uploads are kept)."""
+    check_csrf(request, csrf)
+    from ..analysis import logos
+    b = s.scalar(select(Brand).where(Brand.slug == slug))
+    if not b:
+        raise HTTPException(404, "unknown brand")
+    doms = [b.domain] + [c.domain for c in b.competitors if c.active]
+    res = logos.refresh(s, doms, force=True)
+    audit(s, user.email, "logos_fetched", brand=slug, **res)
+    flash(request, f"Logos: checked {res['checked']} site(s), found {res['found']}. Sites without a usable icon show initials.")
+    return redirect(f"/cc/brands/{slug}")
+
+
+@router.post("/brands/{slug}/logo")
+async def logo_upload(request: Request, slug: str, file: UploadFile, csrf: str = Form(""), s=Depends(get_db),
+                      user=Depends(require_admin)):
+    """Upload the brand's own logo (PNG, JPEG, WebP, GIF or ICO, up to 512 KB). Replaces the fetched icon."""
+    check_csrf(request, csrf)
+    from ..analysis import logos
+    b = s.scalar(select(Brand).where(Brand.slug == slug))
+    if not b:
+        raise HTTPException(404, "unknown brand")
+    data = await file.read(logos.MAX_IMAGE + 1)
+    err = logos.store_upload(s, b.domain, data, user.email)
+    if err:
+        flash(request, err, "err")
+    else:
+        audit(s, user.email, "logo_uploaded", brand=slug, bytes=len(data))
+        flash(request, f"Logo for {b.name} saved.")
+    return redirect(f"/cc/brands/{slug}")
+
+
 # ---------------------------------------------------------------- settings
 @router.get("/settings")
 def settings_page(request: Request, s=Depends(get_db), user=Depends(require_admin)):

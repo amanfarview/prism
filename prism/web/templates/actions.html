@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% import "_m.html" as m %}
+{% extends "base.html" %}{% import "_m.html" as m with context %}
 {% block content %}
 {{ m.brand_header(b, tab, base, days, '/b/' ~ b.slug ~ '/actions') }}
 <p class="muted">What to do next, ranked by likely impact. Each one says what triggered it. </p>

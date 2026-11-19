@@ -6,6 +6,7 @@
   run <slug> [--samples N] [--engines a,b] [--yes] run now in this shell (asks first)
   set-key <provider>        store a provider key in the secret store (prompted, not echoed);
                             also `set-key entra` (Entra client secret) and `set-key teams` (alerts webhook)
+  fetch-logos [--yes]       fetch missing company icons from their own sites (free); --yes re-fetches all but uploads
   active-runs               ids of runs in progress (deploy/update.sh won't restart the worker under them)
   test-engine <key>         one real call to check key/model (costs one call)
   audit-site <slug>         AI readiness audit of the brand's site (free)
@@ -103,6 +104,11 @@ def main(argv=None):
                 row.last4, row.updated_at, row.updated_by = val[-4:], now(), "cli"
                 audit(s, "cli", "key_set", provider=a.arg, last4=val[-4:])
         print("Stored. Restart to pick it up at once: sudo systemctl restart prism-web prism-worker")
+    elif a.cmd == "fetch-logos":
+        from .analysis import logos
+        with session_scope() as s:
+            res = logos.refresh(s, force=a.yes)
+        print(f"Logos: checked {res['checked']} site(s), found {res['found']}.")
     elif a.cmd == "active-runs":
         from .models import Run
         with session_scope() as s:

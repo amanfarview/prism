@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer,
+from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, LargeBinary,
                         String, Text, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -335,3 +335,16 @@ class CrawlerHit(Base):
     purpose: Mapped[str] = mapped_column(String(30), default="")  # training|search|user
     path: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[int] = mapped_column(Integer, default=200)
+
+
+class SiteLogo(Base):
+    """A tracked company's icon (portco or competitor), keyed by its bare domain. Fetched once from the company's
+    own site by the worker (prism/analysis/logos.py) or uploaded in the Command Centre, then served by Prism itself
+    at /prism/logo/<domain>, so browsers never call third-party logo services. Raster images only, never SVG."""
+    __tablename__ = "site_logo"
+    domain: Mapped[str] = mapped_column(String(200), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20), default="ok")  # ok | none (nothing usable found) | upload
+    content_type: Mapped[str] = mapped_column(String(60), default="")
+    data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    source: Mapped[str] = mapped_column(Text, default="")  # the URL it came from, or "upload by <email>"
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=now)

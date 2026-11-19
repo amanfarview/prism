@@ -203,9 +203,9 @@ def test_mssql_ddl_is_unicode_and_datetime2():
     from sqlalchemy.dialects import mssql
     from sqlalchemy.schema import CreateTable
 
-    from prism.models import Answer, AuditLog
-    ddl = str(CreateTable(Answer.__table__).compile(dialect=mssql.dialect())) + \
-        str(CreateTable(AuditLog.__table__).compile(dialect=mssql.dialect()))
+    from prism.models import Answer, AuditLog, SiteLogo
+    ddl = "".join(str(CreateTable(t.__table__).compile(dialect=mssql.dialect())) for t in (Answer, AuditLog, SiteLogo))
+    assert "VARBINARY(max)" in ddl and " IMAGE" not in ddl
     assert "NVARCHAR(max)" in ddl and "DATETIME2" in ddl
     assert " VARCHAR(" not in ddl and " DATETIME," not in ddl and " DATETIME " not in ddl
 

@@ -15,7 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from ..catalogue import ensure_defaults
 from ..config import get_settings
 from ..db import SessionLocal, init_db, ping, session_scope
-from ..models import Brand
+from ..models import Brand, SiteLogo
 from . import auth
 
 HERE = Path(__file__).parent
@@ -52,7 +52,9 @@ def num(x, digits=1):
     return "–" if x is None else f"{x:.{digits}f}"
 
 
-templates.env.filters.update(pct=pct, ci=ci, money=money, dt=dt, num=num, cost=cost)
+from ..analysis.logos import normalise as _dom  # noqa: E402
+
+templates.env.filters.update(pct=pct, ci=ci, money=money, dt=dt, num=num, cost=cost, dom=_dom)
 
 
 # ---------------------------------------------------------------- security middleware (pure ASGI)
@@ -157,9 +159,11 @@ def render(request: Request, name: str, s, user, **ctx) -> HTMLResponse:
     st = get_settings()
     brands = list(s.scalars(select(Brand).where(Brand.active == True).order_by(Brand.name)))
     flash = request.session.pop("flash", None)
+    # domains that have a logo to show (small table: one row per tracked company)
+    logos = set(s.scalars(select(SiteLogo.domain).where(SiteLogo.status.in_(["ok", "upload"]))))
     return templates.TemplateResponse(request, name, {
         "user": user, "base": st.base_path, "brands_nav": brands, "csrf": auth.csrf_token(request),
-        "flash": flash, **ctx})
+        "flash": flash, "logos": logos, **ctx})
 
 
 def flash(request: Request, msg: str, kind: str = "ok") -> None:

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-from sqlalchemy import DateTime, String, Text, Unicode, create_engine, event, text
+from sqlalchemy import DateTime, LargeBinary, String, Text, Unicode, create_engine, event, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.sql.elements import BindParameter
@@ -37,6 +37,11 @@ def _mssql_string(type_, compiler, **kw):
 @compiles(Text, "mssql")
 def _mssql_text(type_, compiler, **kw):
     return "NVARCHAR(max)"
+
+
+@compiles(LargeBinary, "mssql")
+def _mssql_binary(type_, compiler, **kw):
+    return "VARBINARY(max)"  # never the deprecated IMAGE type
 
 
 @compiles(DateTime, "mssql")
