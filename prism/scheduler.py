@@ -6,6 +6,7 @@ and an alert is sent, rather than running partially.
 """
 from __future__ import annotations
 
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -106,13 +107,41 @@ def loop(interval: int = 30) -> None:  # pragma: no cover - long running
     recover_interrupted()
     log.info("Prism worker started")
     beat = heartbeat_path()
+    next_logos = time.time() + 60  # a minute after start-up, then every 6 hours: fill in missing company logos
     while True:
         try:
             tick()
             beat.touch()  # deploy/healthcheck.py alerts if this goes stale (worker stuck or crash-looping)
         except Exception as e:
             log.exception("worker tick failed: %s", e)
+        if time.time() >= next_logos and not _logo_thread_busy():
+            next_logos = time.time() + 6 * 3600
+            # in the background: slow sites must never hold up runs or the heartbeat
+            threading.Thread(target=_refresh_logos, name="logos", daemon=True).start()
         time.sleep(interval)
+
+
+_logo_lock = threading.Lock()
+
+
+def _logo_thread_busy() -> bool:
+    return _logo_lock.locked()
+
+
+def _refresh_logos() -> None:
+    """Fill in missing company logos (free, plain web requests through the SSRF guard). Cosmetic: never raises."""
+    if not _logo_lock.acquire(blocking=False):
+        return
+    try:
+        from .analysis import logos
+        with session_scope() as s:
+            res = logos.refresh(s)
+        if res["checked"]:
+            log.info("logos: checked %s, found %s", res["checked"], res["found"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("logo refresh failed: %s", type(e).__name__)
+    finally:
+        _logo_lock.release()
 
 
 def heartbeat_path() -> Path:

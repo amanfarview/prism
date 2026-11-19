@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% import "_m.html" as m %}
+{% extends "base.html" %}{% import "_m.html" as m with context %}
 {% block title %}{{ b.name }}{% endblock %}
 {% block content %}
 {{ m.brand_header(b, tab, base, days, '/b/' ~ b.slug) }}
@@ -17,9 +17,9 @@
 <div class="grid32" style="margin-top:16px">
 <div class="panel">
   <div class="phead"><h2>Who AI names, and how sure we are</h2><span class="small muted">dot = rate · bar = 95% range</span></div>
-  <table style="margin-top:8px"><tr><th>Brand</th><th class="num">Named in</th><th style="width:34%">95% range</th><th class="num">Visibility</th><th class="num">Avg pos.</th><th class="num">Share</th></tr>
+  <table style="margin-top:8px"><tr><th>Brand</th><th class="num">Named in</th><th style="width:26%">95% range</th><th class="num">Visibility</th><th class="num">Avg pos.</th><th class="num">Share</th></tr>
   {% for e in sm.board %}
-  <tr class="{{ 'self' if e.type == 'self' }}"><td class="name" title="{{ e.name }}">{{ e.name }}</td><td class="num"><b>{{ e.rate|pct }}</b></td><td>{{ m.cibar(e.rate, e.rate_ci, me=(e.type == 'self')) }}</td><td class="num">{{ e.visibility[0]|num }}</td><td class="num">{{ e.avg_position|num }}</td><td class="num">{{ e.sov|pct }}</td></tr>
+  <tr class="{{ 'self' if e.type == 'self' }}"><td class="name" title="{{ e.name }}"><span class="withlogo">{{ m.logo((doms or {}).get(e.name), e.name, 'xs') }}{{ e.name }}</span></td><td class="num"><b>{{ e.rate|pct }}</b></td><td>{{ m.cibar(e.rate, e.rate_ci, me=(e.type == 'self')) }}</td><td class="num">{{ e.visibility[0]|num }}</td><td class="num">{{ e.avg_position|num }}</td><td class="num">{{ e.sov|pct }}</td></tr>
   {% endfor %}</table>
   <p class="small muted" style="margin:10px 0 0">Where two bars overlap, the difference may be noise.</p>
 </div>
