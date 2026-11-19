@@ -11,6 +11,15 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # FastAPI 0.162.6+ needs Python 3.11; the VM runs Prism on Python 3.10.
+      # Remove once Prism moves to its own Python 3.12.
+      - dependency-name: "fastapi"
+        versions: [">=0.162.6"]
+      # SQLAlchemy 2.1 is a feature release and CI tests run on SQLite, not Azure SQL.
+      # 2.0.x patches still come through; take 2.1 deliberately after deploy/azure_sql.py test.
+      - dependency-name: "sqlalchemy"
+        update-types: ["version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
