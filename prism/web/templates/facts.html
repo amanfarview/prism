@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
 <p class="muted">The fact sheet is the source of truth. Prism flags answers that contradict it.
 {% if not ai_on %}Only "known wrong" patterns are checked right now; switch on the AI pass in Command Centre &gt; Settings to check every statement (paid, budget-capped).{% endif %}</p>
 <div class="grid2">

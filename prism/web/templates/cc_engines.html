@@ -1,30 +1,43 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Engines{% endblock %}
 {% block content %}
-<h1>Engines</h1>
-<p class="muted"><b>Search</b> engines answer with live web search, like the consumer apps usually do. <b>Memory</b> engines answer from training only, which shows long-term brand authority. <b>App</b> engines (DataForSEO) return what a person actually sees in ChatGPT, Gemini, AI Overviews and AI Mode. Prices are list prices for estimates and the spend ledger; check them against each provider's pricing page.</p>
-{% for e in rows %}
-<div class="panel">
-<form method="post" action="{{ base }}/cc/engines/{{ e.key }}/save">{{ m.csrf_field(csrf) }}
-<div class="row" style="justify-content:space-between">
-<div><b>{{ e.label }}</b> <span class="pill {{ e.mode }}">{{ e.mode }}</span> <span class="small muted">{{ e.key }} · {{ e.provider }} · {{ e.adapter }}</span>
-{% set k = keys.get(e.provider) %}{% if e.provider != 'mock' %}{% if k and k.last4 %}<span class="pill ok">key …{{ k.last4 }}</span>{% else %}<span class="pill bad">no key</span>{% endif %}{% endif %}
-{% if e.last_test_at %}<div class="small {{ '' if e.last_test_ok else 'muted' }}">Last test {{ e.last_test_at|dt }}: {{ e.last_test_msg[:220] }}</div>{% endif %}</div>
-<label style="color:var(--ink)"><input type="checkbox" name="enabled" {{ 'checked' if e.enabled }}> Enabled</label></div>
-<div class="row">
-<div><label>Model</label><input name="model" value="{{ e.model }}" style="width:230px"></div>
-<div><label>$ / 1M input</label><input name="price_in_per_m" value="{{ e.price_in_per_m }}" style="width:80px"></div>
-<div><label>$ / 1M output</label><input name="price_out_per_m" value="{{ e.price_out_per_m }}" style="width:80px"></div>
-<div><label>$ / search</label><input name="price_per_search" value="{{ e.price_per_search }}" style="width:80px"></div>
-<div><label>$ / call</label><input name="price_per_call" value="{{ e.price_per_call }}" style="width:80px"></div>
-<div><label>Est. in / out tokens</label><input name="est_in_tokens" value="{{ e.est_in_tokens }}" style="width:70px"> <input name="est_out_tokens" value="{{ e.est_out_tokens }}" style="width:60px"></div>
-<div><label>Est. searches</label><input name="est_searches" value="{{ e.est_searches }}" style="width:60px"></div>
-<div><label>Parallel</label><input name="concurrency" value="{{ e.concurrency }}" style="width:50px"></div>
-<div><label>≈ per call</label><b>{{ e.est_cost()|cost }}</b></div>
+<div class="eyebrow">Command Centre</div><h1>Engines</h1>
+<p class="muted"><b>Search</b> engines answer with live web search, like the consumer apps. <b>Memory</b> engines answer from training only, which shows long-term brand authority. <b>App</b> engines (DataForSEO) return what a person actually sees in ChatGPT, Gemini, AI Overviews and AI Mode. Prices are list prices used for estimates and the spend ledger; check them against each provider's pricing page.</p>
+<div class="ehead" style="margin-top:18px"><span>Engine</span><span>Model</span><span>Key</span><span>≈ per call</span><span>Status</span><span></span></div>
+{% for e in rows %}{% set k = keys.get(e.provider) %}
+<details class="eng">
+<summary>
+  <div style="min-width:0"><div class="nm">{{ e.label }}</div><div class="sub"><span class="pill {{ e.mode }}">{{ e.mode }}</span> {{ e.provider }}</div></div>
+  <div style="min-width:0">{% if e.model %}<code>{{ e.model }}</code>{% else %}<span class="muted small">n/a</span>{% endif %}</div>
+  <div>{% if e.provider == 'mock' %}<span class="muted small">none needed</span>{% elif k and k.last4 %}<span class="pill ok">…{{ k.last4 }}</span>{% else %}<span class="pill bad">no key</span>{% endif %}</div>
+  <div><b>{{ e.est_cost()|cost }}</b></div>
+  <div>{% if e.enabled %}<span class="pill ok dot">on</span>{% else %}<span class="pill">off</span>{% endif %}
+    {% if e.last_test_ok is not none %}<span class="pill {{ 'ok' if e.last_test_ok else 'bad' }}" title="{{ e.last_test_msg[:200] }}">{{ 'tested' if e.last_test_ok else 'test failed' }}</span>{% endif %}</div>
+</summary>
+<div class="body">
+<form method="post" id="eng-{{ e.key }}" action="{{ base }}/cc/engines/{{ e.key }}/save">{{ m.csrf_field(csrf) }}
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+  <label class="switch"><input type="checkbox" name="enabled" {{ 'checked' if e.enabled }}> Enabled for runs</label>
+  <span class="small muted">{{ e.key }} · adapter {{ e.adapter }}</span>
 </div>
-<details><summary class="small">Advanced settings (JSON)</summary><textarea name="settings" rows="3">{{ e.settings|tojson }}</textarea></details>
-<p><button class="btn small">Save</button></p></form>
-{% if e.provider != 'mock' %}<form method="post" action="{{ base }}/cc/engines/{{ e.key }}/test" data-confirm="Make one real call to {{ e.label }}? Costs about {{ e.est_cost()|cost }}.">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Test (1 call ≈ {{ e.est_cost()|cost }})</button></form>{% endif %}
+{% if e.last_test_at %}<div class="note" style="margin:6px 0 10px">Last test {{ e.last_test_at|dt }}: {{ e.last_test_msg[:220] }}</div>{% endif %}
+<div class="fgrid">
+  <div class="wide"><label>Model</label><input name="model" value="{{ e.model }}"></div>
+  <div><label>$ / 1M input</label><input name="price_in_per_m" value="{{ e.price_in_per_m }}"></div>
+  <div><label>$ / 1M output</label><input name="price_out_per_m" value="{{ e.price_out_per_m }}"></div>
+  <div><label>$ / search</label><input name="price_per_search" value="{{ e.price_per_search }}"></div>
+  <div><label>$ / call</label><input name="price_per_call" value="{{ e.price_per_call }}"></div>
+  <div><label>Est. input tokens</label><input name="est_in_tokens" value="{{ e.est_in_tokens }}"></div>
+  <div><label>Est. output tokens</label><input name="est_out_tokens" value="{{ e.est_out_tokens }}"></div>
+  <div><label>Est. searches</label><input name="est_searches" value="{{ e.est_searches }}"></div>
+  <div><label>Parallel calls</label><input name="concurrency" value="{{ e.concurrency }}"></div>
 </div>
+<details style="margin-top:10px"><summary class="small">Advanced settings (JSON)</summary><textarea name="settings" rows="3" style="margin-top:6px">{{ e.settings|tojson }}</textarea></details>
+</form>
+<div class="row" style="margin-top:14px;align-items:center"><button class="btn small" form="eng-{{ e.key }}">Save</button>
+{% if e.provider != 'mock' %}<form method="post" action="{{ base }}/cc/engines/{{ e.key }}/test" data-confirm="Make one real call to {{ e.label }}? Costs about {{ e.est_cost()|cost }}.">{{ m.csrf_field(csrf) }}<button class="btn ghost small">Test with one real call (≈ {{ e.est_cost()|cost }})</button></form>{% endif %}
+</div>
+</div>
+</details>
 {% endfor %}
 {% endblock %}

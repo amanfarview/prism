@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<h1>Settings</h1>
+<div class="eyebrow">Command Centre</div><h1>Settings</h1>
 <form method="post" action="{{ base }}/cc/settings/save">{{ m.csrf_field(csrf) }}
 <div class="panel"><h2 style="margin-top:0">AI pass (optional, paid)</h2>
 <p class="muted small">Everything else in Prism is free analysis of stored answers. The AI pass adds one cheap-model call per answer to judge whether each brand is <i>recommended</i>, the tone, untracked vendors, and every statement about the client checked against the fact sheet. Budget-capped like everything else. Roughly 1,500 tokens in and 500 out per answer.</p>

@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from ..budget import caps, month_key, month_spend
 from ..collector import test_engine
 from ..common import audit, get_setting, set_setting
+from ..config import get_settings
 from ..models import (ApiToken, AuditLog, Brand, Budget, Competitor, Engine, Market, ProviderKey, Run, Schedule,
                       SpendEntry, now)
 from ..scheduler import RUNS_PER_MONTH, next_run_time
@@ -46,13 +47,14 @@ def home(request: Request, s=Depends(get_db), user=Depends(require_admin)):
     runs = list(s.scalars(select(Run).order_by(Run.id.desc()).limit(10)))
     bmap = {b.id: b for b in s.scalars(select(Brand))}
     return render(request, "cc_home.html", s, user, gcap=gcap, pcaps=pcaps, spent=spent, by_prov=by_prov,
-                  engines=engines, keys=keys, scheds=scheds, proj=proj, runs=runs, bmap=bmap, cc="home")
+                  engines=engines, keys=keys, scheds=scheds, proj=proj, runs=runs, bmap=bmap,
+                  backend=get_settings().secret_backend, cc="home")
 
 
 # ---------------------------------------------------------------- engines
 @router.get("/engines")
 def engines(request: Request, s=Depends(get_db), user=Depends(require_admin)):
-    rows = list(s.scalars(select(Engine).order_by(Engine.mode.desc(), Engine.provider, Engine.key)))
+    rows = list(s.scalars(select(Engine).order_by(Engine.enabled.desc(), Engine.mode.desc(), Engine.label)))
     keys = {k.provider: k for k in s.scalars(select(ProviderKey))}
     return render(request, "cc_engines.html", s, user, rows=rows, keys=keys, cc="engines")
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}Budget{% endblock %}
 {% block content %}
-<h1>Budget &amp; spend</h1>
+<div class="eyebrow">Command Centre</div><h1>Budget &amp; spend</h1>
 <p class="muted">Every run is estimated first and refused if it would break a cap. While running, each call reserves its estimated cost, so a run stops at the cap rather than after it. Alerts go to Teams at the thresholds below.</p>
 {% set g = rows|selectattr('scope','equalto','global')|first %}
 <div class="panel"><form method="post" action="{{ base }}/cc/budget/save">{{ m.csrf_field(csrf) }}

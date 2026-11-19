@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
 <p class="muted">Log what you changed and which prompts it should move. Prism compares those prompts before and after with prompts you didn't touch (difference-in-differences), so a model update that lifts everything isn't mistaken for your win.</p>
 <table><tr><th>Change</th><th>Shipped</th><th>Targets</th><th>Targeted: before → after</th><th>Control: before → after</th><th>Effect</th><th>Verdict</th></tr>
 {% for c in changes %}{% set r = results[c.id] %}

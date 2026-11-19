@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}API tokens{% endblock %}
 {% block content %}
-<h1>API &amp; MCP tokens</h1>
+<div class="eyebrow">Command Centre</div><h1>API &amp; MCP tokens</h1>
 <p class="muted">Service tokens for scripts, log shipping and the Prism MCP server, so access isn't tied to one person's login. Read tokens can only read; write tokens can also send crawler logs.</p>
 {% if new %}<div class="flash">New token (copy it now, it won't be shown again): <code>{{ new }}</code></div>{% endif %}
 <table><tr><th>Name</th><th>Scope</th><th>Created</th><th>Last used</th><th></th></tr>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block content %}
-<h1>{{ b.name }}: confirm run</h1>{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base) }}
+<h2 style="margin-top:0">Confirm run</h2>
 {% set e = plan.estimate %}
 <div class="cards"><div class="card"><div class="k">Calls</div><div class="v">{{ plan.tasks }}</div><div class="r">prompts × markets × engines × {{ samples }} samples</div></div>
 <div class="card"><div class="k">Estimated cost</div><div class="v">{{ e.total|money }}</div><div class="r">from list prices in Command Centre</div></div>

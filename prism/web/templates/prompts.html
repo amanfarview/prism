@@ -1,23 +1,23 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}{{ b.name }} prompts{% endblock %}
 {% block content %}
-<h1>{{ b.name }}</h1>{{ m.tabs(b, tab, base) }}
-<div class="row" style="justify-content:space-between"><p class="muted">Buyer questions, worst gap first. Click one to read every answer word for word. {{ m.days_picker(base, '/b/' ~ b.slug ~ '/prompts', days) }}</p>
+{{ m.brand_header(b, tab, base, days, '/b/' ~ b.slug ~ '/prompts') }}
+<div class="row" style="justify-content:space-between;margin-bottom:14px"><p class="muted" style="margin:0">Buyer questions, worst gap first. Open one to read every answer word for word. Engine columns show how many answers named {{ b.name }}; darker = more often.</p>
 <a class="btn ghost small" href="{{ base }}/b/{{ b.slug }}/export.csv">Export answers (CSV)</a></div>
 <table>
-<tr><th>Prompt</th><th>Tags</th><th>Named in</th><th style="width:150px">95% range</th><th>Avg pos.</th><th>Leading competitor</th>
-{% for k in used %}<th class="small" title="{{ engines[k].label if k in engines else k }}">{{ (engines[k].label if k in engines else k)[:14] }}</th>{% endfor %}
-<th>Answers</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
+<tr><th>Prompt</th><th class="num">Named in</th><th style="width:150px">95% range</th><th class="num">Avg pos.</th><th>Leading competitor</th>
+{% for k in used %}{% set lab = engines[k].label if k in engines else k %}<th class="eng" title="{{ lab }}">{{ lab.split(' (')[0].replace('Demo engine, ', 'Demo ') }}<span class="m">{{ engines[k].mode if k in engines else '' }}</span></th>{% endfor %}
+<th class="num">Answers</th>{% if user.is_admin %}<th></th>{% endif %}</tr>
 {% for r in rows %}{% set p = r.prompt %}
 <tr style="{{ 'opacity:.5' if not p.active }}">
-<td><a href="{{ base }}/b/{{ b.slug }}/prompts/{{ p.id }}">{{ p.text }}</a>{% if p.source != 'manual' %} <span class="pill">{{ p.source }}{% if p.demand %} · {{ p.demand }}{% endif %}</span>{% endif %}</td>
-<td class="small">{{ (p.tags or [])|join(', ') }}</td>
-<td><b>{{ r.rate|pct if r.n else '–' }}</b></td>
-<td>{% if r.n %}{{ m.cibar(r.rate, r.rate_ci) }}{% endif %}</td>
-<td>{{ r.avg_position|num }}</td>
-<td>{{ r.top_competitor }} {% if r.top_competitor %}<span class="small muted">{{ r.top_competitor_rate|pct }}</span>{% endif %}</td>
-{% for k in used %}{% set pe = r.per_engine.get(k) %}<td class="small">{% if pe %}{{ pe[0] }}/{{ pe[1] }}{% else %}–{% endif %}</td>{% endfor %}
-<td>{{ r.n }}</td>
+<td style="max-width:420px"><a href="{{ base }}/b/{{ b.slug }}/prompts/{{ p.id }}">{{ p.text }}</a>
+<div class="small muted">{% for t in (p.tags or []) %}<span class="pill" style="margin:4px 4px 0 0">{{ t }}</span>{% endfor %}{% if p.source != 'manual' %}<span class="pill own" style="margin-top:4px">{{ p.source }}{% if p.demand %} · {{ p.demand }}{% endif %}</span>{% endif %}</div></td>
+<td class="num"><b>{{ r.rate|pct if r.n else '–' }}</b></td>
+<td>{% if r.n %}{{ m.cibar(r.rate, r.rate_ci, me=True) }}{% endif %}</td>
+<td class="num">{{ r.avg_position|num }}</td>
+<td>{% if r.top_competitor %}{{ r.top_competitor }} <span class="small muted">{{ r.top_competitor_rate|pct }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+{% for k in used %}{% set pe = r.per_engine.get(k) %}{% if pe and pe[1] %}{% set q = pe[0] / pe[1] %}<td class="h h{{ (q * 4)|round|int }}" title="{{ pe[0] }} of {{ pe[1] }} answers name {{ b.name }}">{{ pe[0] }}/{{ pe[1] }}</td>{% else %}<td class="h h0">–</td>{% endif %}{% endfor %}
+<td class="num">{{ r.n }}</td>
 {% if user.is_admin %}<td><form method="post" action="{{ base }}/b/{{ b.slug }}/prompts/{{ p.id }}/toggle">{{ m.csrf_field(csrf) }}<button class="btn ghost small">{{ 'Pause' if p.active else 'Resume' }}</button></form></td>{% endif %}
 </tr>{% endfor %}
 </table>

@@ -1,51 +1,63 @@
 {% extends "base.html" %}{% import "_m.html" as m %}
 {% block title %}{{ b.name }}{% endblock %}
 {% block content %}
-<div class="row" style="justify-content:space-between">
-<div><h1>{{ b.name }}</h1><div class="muted">{{ b.category }} · {{ b.domain }}</div></div>
-<div>{{ m.days_picker(base, '/b/' ~ b.slug, days) }}</div>
-</div>
-{{ m.tabs(b, tab, base) }}
+{{ m.brand_header(b, tab, base, days, '/b/' ~ b.slug) }}
 {% if not sm.answers %}<div class="note">No analysed answers in the last {{ days }} days. {% if user.is_admin %}Enable engines and keys in the Command Centre, then start a run from the <a href="{{ base }}/b/{{ b.slug }}/runs">Runs</a> tab.{% endif %}</div>{% endif %}
+
 <div class="cards">
- <div class="card"><div class="k">Named in</div><div class="v">{{ sm.rate|pct }}</div><div class="r">95% range {{ sm.rate_ci|ci }} · {{ sm.answers }} answers</div></div>
- <div class="card"><div class="k">Visibility</div><div class="v">{{ sm.visibility|num }}</div><div class="r">range {{ sm.vis_ci[0]|num }}-{{ sm.vis_ci[1]|num }} · weights first place most</div></div>
+ <div class="card hero"><div class="k">Named in</div><div class="v">{{ sm.rate|pct }}</div>
+   {% if sm.answers %}<div style="margin-top:10px">{{ m.cibar(sm.rate, sm.rate_ci, me=True) }}</div>{% endif %}
+   <div class="r">95% range {{ sm.rate_ci|ci }} · {{ sm.answers }} answers</div></div>
  <div class="card"><div class="k">Rank vs competitors</div><div class="v">{% if sm.answers %}#{{ sm.rank }}{% else %}–{% endif %}</div><div class="r">of {{ sm.of }} tracked brands</div></div>
+ <div class="card"><div class="k">Visibility score</div><div class="v">{{ sm.visibility|num }}</div><div class="r">range {{ sm.vis_ci[0]|num }}–{{ sm.vis_ci[1]|num }} · first place weighs most</div></div>
  <div class="card"><div class="k">Avg position when named</div><div class="v">{{ sm.avg_position|num }}</div><div class="r">1 = named first</div></div>
- <div class="card"><div class="k">vs previous {{ days }} days</div><div class="v" style="font-size:20px">{{ sm.direction }}</div><div class="r">{% if sm.prev_rate is not none %}was {{ sm.prev_rate|pct }}{% endif %}</div></div>
+ <div class="card"><div class="k">vs previous {{ days }} days</div><div class="v" style="font-size:20px;margin-top:10px">{{ m.change(sm.direction) }}</div><div class="r">{% if sm.prev_rate is not none %}was {{ sm.prev_rate|pct }}{% else %}no earlier data{% endif %}</div></div>
 </div>
 
-<div class="grid2" style="margin-top:14px">
-<div class="panel"><h2 style="margin-top:0">Who AI names, and how sure we are</h2>
-<table><tr><th>Brand</th><th>Named in</th><th style="width:160px">95% range</th><th>Visibility</th><th>Avg pos.</th><th>Share of voice</th></tr>
-{% for e in sm.board %}
-<tr class="{{ 'self' if e.type == 'self' }}"><td>{{ e.name }}</td><td><b>{{ e.rate|pct }}</b></td><td>{{ m.cibar(e.rate, e.rate_ci) }}<span class="small muted">{{ e.rate_ci|ci }}</span></td><td>{{ e.visibility[0]|num }}</td><td>{{ e.avg_position|num }}</td><td>{{ e.sov|pct }}</td></tr>
-{% endfor %}</table>
-<p class="small muted">Overlapping ranges mean the difference may be noise.</p>
+<div class="grid32" style="margin-top:16px">
+<div class="panel">
+  <div class="phead"><h2>Who AI names, and how sure we are</h2><span class="small muted">dot = rate · bar = 95% range</span></div>
+  <table style="margin-top:8px"><tr><th>Brand</th><th class="num">Named in</th><th style="width:34%">95% range</th><th class="num">Visibility</th><th class="num">Avg pos.</th><th class="num">Share</th></tr>
+  {% for e in sm.board %}
+  <tr class="{{ 'self' if e.type == 'self' }}"><td class="name" title="{{ e.name }}">{{ e.name }}</td><td class="num"><b>{{ e.rate|pct }}</b></td><td>{{ m.cibar(e.rate, e.rate_ci, me=(e.type == 'self')) }}</td><td class="num">{{ e.visibility[0]|num }}</td><td class="num">{{ e.avg_position|num }}</td><td class="num">{{ e.sov|pct }}</td></tr>
+  {% endfor %}</table>
+  <p class="small muted" style="margin:10px 0 0">Where two bars overlap, the difference may be noise.</p>
 </div>
-<div class="panel"><h2 style="margin-top:0">By engine</h2>
-<table><tr><th>Engine</th><th>Mode</th><th>Named in</th><th>Range</th><th>Leader</th><th>Answers</th><th>Cited sources</th></tr>
-{% for r in eng %}<tr><td>{{ r.label }}</td><td><span class="pill {{ r.mode }}">{{ r.mode }}</span></td><td><b>{{ r.rate|pct }}</b></td><td class="small">{{ r.rate_ci|ci }}</td><td>{{ r.leader }} <span class="small muted">{{ r.leader_rate|pct }}</span></td><td>{{ r.n }}</td><td>{{ r.with_citations_pct|pct }}</td></tr>{% endfor %}
-</table>
-{% if mvs.memory is not none and mvs.search is not none %}
-<div class="note">From memory (no search): <b>{{ mvs.memory|pct }}</b> · With live search: <b>{{ mvs.search|pct }}</b>.
-{% if mvs.search - mvs.memory > 0.15 %}Search finds you, but the models don't know you yet: an authority gap that closes slowly.{% elif mvs.memory - mvs.search > 0.15 %}The models know you, but live search surfaces others: fixable with content and crawlability.{% else %}Memory and search are broadly in line.{% endif %}</div>
-{% endif %}
+<div class="stack">
+<div class="panel">
+  <h2>By engine</h2>
+  <ul class="elist">
+  {% for r in eng %}<li>
+    <div style="min-width:0"><div class="en" title="{{ r.label }}">{{ r.label.split(' (')[0] }}</div>
+      <div class="es"><span class="pill {{ r.mode }}">{{ r.mode }}</span> leader {{ r.leader }} {{ r.leader_rate|pct }} · {{ r.n }} answers</div></div>
+    <div>{{ m.cibar(r.rate, r.rate_ci, me=True) }}</div>
+    <div class="er">{{ r.rate|pct }}</div>
+  </li>{% else %}<li class="muted">No answers yet.</li>{% endfor %}
+  </ul>
+  {% if mvs.memory is not none and mvs.search is not none %}
+  <div class="insight"><div class="ico">i</div><div>From memory <b>{{ mvs.memory|pct }}</b> · with live search <b>{{ mvs.search|pct }}</b>.
+  {% if mvs.search - mvs.memory > 0.15 %}Search finds {{ b.name }}, but the models don't know it yet: an authority gap that closes slowly.{% elif mvs.memory - mvs.search > 0.15 %}The models know {{ b.name }}, but live search surfaces others: fixable with content and crawlability.{% else %}Memory and search are broadly in line.{% endif %}</div></div>
+  {% endif %}
+</div>
 </div>
 </div>
 
-<div class="panel"><h2 style="margin-top:0">Trend by run (named-in rate, shaded = 95% range for {{ b.name }})</h2>
-{% if trend.labels|length > 1 %}<canvas id="trend" height="90"></canvas>{% else %}<p class="muted">Needs at least two runs.</p>{% endif %}
+<div class="panel">
+  <div class="phead"><h2>Trend by run</h2><span class="small muted">named-in rate · shaded band = {{ b.name }}'s 95% range</span></div>
+  {% if trend.labels|length > 1 %}<div class="chartbox"><canvas id="trend"></canvas></div>{% else %}<div class="empty"><b>Needs at least two runs</b>The trend appears after the second run.</div>{% endif %}
 </div>
 
 <div class="grid2">
-<div><h2>Top actions</h2>
-{% for a in acts %}<div class="act"><h3>{{ a.title }}</h3><div class="muted">{{ a.why }}</div></div>{% endfor %}
-<a href="{{ base }}/b/{{ b.slug }}/actions">All actions</a></div>
-<div><h2>Recent runs</h2>
-<table><tr><th>Run</th><th>When</th><th>Status</th><th>Calls</th><th>Cost</th><th>Same as last run</th></tr>
-{% for r in runs %}<tr><td>{{ r.id }}</td><td>{{ r.created_at|dt('%d %b %H:%M') }}</td><td>{{ m.status(r.status) }}</td><td>{{ r.done_calls }}/{{ r.planned_calls }}</td><td>{{ r.cost_usd|money }}</td><td>{% if r.identical_to_previous_pct is not none %}<span class="pill {{ 'bad' if r.identical_to_previous_pct >= 60 else 'ok' }}">{{ r.identical_to_previous_pct|num(0) }}%</span>{% else %}–{% endif %}</td></tr>{% endfor %}
-</table></div>
+<div class="panel">
+  <div class="phead"><h2>Top actions</h2><a class="small" href="{{ base }}/b/{{ b.slug }}/actions">All actions →</a></div>
+  <ol class="acts">{% for a in acts %}<li><div><div class="t">{{ a.title }}</div><div class="w">{{ a.why }}</div></div></li>{% else %}<li class="muted">Nothing flagged.</li>{% endfor %}</ol>
+</div>
+<div class="panel">
+  <div class="phead"><h2>Recent runs</h2><a class="small" href="{{ base }}/b/{{ b.slug }}/runs">All runs →</a></div>
+  <table style="margin-top:8px"><tr><th>Run</th><th>When</th><th>Status</th><th class="num">Calls</th><th class="num">Cost</th><th class="num">Same as last</th></tr>
+  {% for r in runs %}<tr><td class="muted">#{{ r.id }}</td><td>{{ r.created_at|dt('%d %b %H:%M') }}</td><td>{{ m.status(r.status) }}</td><td class="num">{{ r.done_calls }}/{{ r.planned_calls }}</td><td class="num">{{ r.cost_usd|money }}</td><td class="num">{% if r.identical_to_previous_pct is not none %}<span class="pill {{ 'bad' if r.identical_to_previous_pct >= 60 else 'ok' }}">{{ r.identical_to_previous_pct|num(0) }}%</span>{% else %}–{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="muted">No runs yet.</td></tr>{% endfor %}
+  </table>
+</div>
 </div>
 {% endblock %}
 {% block scripts %}
