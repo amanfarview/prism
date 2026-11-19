@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# The Prism command line, run the way the services run: as the prism user, inside the same sandbox, with
+# production settings from /etc/prism/prism.env. Installed to /usr/local/bin/prism by deploy/install.sh.
+#
+#   sudo prism selfcheck                    safety checks (sign-in, DB, secrets file, metadata blocked, isolation)
+#   sudo prism estimate amplience           cost of a run (free)
+#   sudo prism run amplience --samples 3    asks before spending
+#   sudo prism set-key openai               provider key, typed hidden (also: entra, teams)
+#   sudo prism test-engine chatgpt_search   one real call
+#   sudo prism token "Claude MCP"           read token for the MCP server (printed once)
+#   sudo prism --staging <command>          the same against staging
+#
+# Never `cd /var/www/prism && venv/bin/python -m prism.cli`: there is no venv or .env there any more, and as
+# azureuser the CLI would run outside the sandbox.
+set -euo pipefail
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+APP=/var/www/prism; VENV=/opt/prism-venv; STATE=prism
+ENVS=(-p EnvironmentFile=/etc/prism/prism.env)
+EXTRA=()
+if [ "${1:-}" = "--staging" ]; then
+  shift
+  APP=/var/www/prism-staging; VENV=/opt/prism-staging-venv; STATE=prism-staging
+  ENVS+=(-p EnvironmentFile=/etc/prism/prism-staging.env)
+  EXTRA=(-p InaccessiblePaths=/var/lib/prism)
+fi
+[ -f /etc/prism/prism.env ] || { echo "/etc/prism/prism.env is missing: run deploy/install.sh"; exit 1; }
+IO=--pipe; { [ -t 0 ] && [ -t 1 ]; } && IO=--pty
+# keep this list in step with the [Service] block of deploy/prism-web.service (tests/test_deploy.py checks it)
+exec systemd-run --quiet --wait --collect "$IO" \
+  -p User=prism -p Group=prism "${ENVS[@]}" "${EXTRA[@]}" \
+  -p WorkingDirectory="$APP" -p StateDirectory="$STATE" -p StateDirectoryMode=0700 \
+  -p Environment=PYTHONUNBUFFERED=1 -p Environment=PYTHONDONTWRITEBYTECODE=1 \
+  -p UMask=0077 -p NoNewPrivileges=true -p PrivateTmp=true -p PrivateDevices=true \
+  -p ProtectSystem=strict -p ProtectHome=true -p ProtectKernelTunables=true -p ProtectKernelModules=true \
+  -p ProtectKernelLogs=true -p ProtectControlGroups=true -p ProtectClock=true -p ProtectHostname=true \
+  -p ProtectProc=invisible -p RestrictSUIDSGID=true -p RestrictRealtime=true -p RestrictNamespaces=true \
+  -p LockPersonality=true -p RemoveIPC=true -p KeyringMode=private -p CapabilityBoundingSet= -p AmbientCapabilities= \
+  -p SystemCallArchitectures=native -p SystemCallFilter=@system-service -p SystemCallErrorNumber=EPERM \
+  -p "RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK" -p IPAddressDeny=169.254.169.254/32 \
+  "$VENV/bin/python" -m prism.cli "$@"

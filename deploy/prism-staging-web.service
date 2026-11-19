@@ -1,0 +1,61 @@
+[Unit]
+Description=Prism STAGING web at jarvis.farviewequity.com/prism-staging (dev branch, own schema, never spends)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prism
+Group=prism
+WorkingDirectory=/var/www/prism-staging
+EnvironmentFile=/etc/prism/prism.env
+EnvironmentFile=/etc/prism/prism-staging.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+StateDirectory=prism-staging
+StateDirectoryMode=0700
+ExecStart=/opt/prism-staging-venv/bin/uvicorn prism.web.main:app --host 127.0.0.1 --port 8042 --workers 1 --proxy-headers --forwarded-allow-ips 127.0.0.1 --no-server-header
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+# ---- resources: a B2s VM shared with Orbit, Flo, Jarvis, PortfolioIQ ----
+MemoryHigh=384M
+MemoryMax=640M
+TasksMax=256
+LimitNOFILE=4096
+# ---- isolation (SERVER_OPERATIONS.md section 2; Nov 2026 Prism hardening) ----
+# Own service user; reads its code and venv but can't change them; writes only to its state directory.
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+RemoveIPC=true
+KeyringMode=private
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# Azure's metadata endpoint hands out the VM identity's tokens (Key Vault, Azure SQL...). Prism never needs it,
+# and its site audit fetches outside URLs, so the second lock against SSRF is here (the first is prism/netguard.py).
+IPAddressDeny=169.254.169.254/32
+# staging must never see production's keys
+InaccessiblePaths=/var/lib/prism
+
+[Install]
+WantedBy=multi-user.target

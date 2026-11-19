@@ -40,10 +40,11 @@ Built after the Trakkr technical DD (Nov 2026) to avoid the weaknesses found the
 ## Run locally (free, demo engines only)
 
 ```bash
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-PRISM_DATABASE_URL=sqlite:///./demo.db venv/bin/python scripts/demo_data.py
-PRISM_DATABASE_URL=sqlite:///./demo.db venv/bin/uvicorn prism.web.main:app --port 8040
-# open http://127.0.0.1:8040/prism/   (dev mode: no login, you're admin)
+python3 -m venv venv && venv/bin/pip install -r requirements-dev.txt
+export PRISM_AUTH_MODE=dev PRISM_DATABASE_URL=sqlite:///./demo.db   # dev mode must be asked for; default is sign-in
+venv/bin/python scripts/demo_data.py
+venv/bin/uvicorn prism.web.main:app --port 8040
+# open http://127.0.0.1:8040/prism/   (dev mode: no login, you're admin; refused unless the URL is localhost)
 venv/bin/python -m pytest -q
 ```
 
@@ -57,4 +58,4 @@ one weekly run of the four portcos at 3 samples on the nine API engines is about
 The AI pass, if switched on, adds roughly $0.003 per answer with a Haiku-class model.
 Check prices against each provider's pricing page before relying on the numbers.
 
-See `DEPLOY.md`: `deploy/setup_vm.sh` then `deploy/go_live.sh`.
+Production: see `DEPLOY.md` (Jarvis VM, own service user, `deploy/install.sh`, then `deploy/update.sh` for every deploy).

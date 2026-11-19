@@ -1,0 +1,9 @@
+[Unit]
+Description=Prism health check (every 2 hours, posts to Teams only when something is wrong)
+
+[Timer]
+OnCalendar=*-*-* 00/2:17:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

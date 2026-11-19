@@ -9,3 +9,10 @@ __pycache__/
 data/
 logs/
 deploy/nginx-prism.live.conf
+*.sqlite
+*.sqlite3
+secrets.json
+*.pem
+*.key
+health-state.json
+worker.heartbeat

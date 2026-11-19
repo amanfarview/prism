@@ -1,4 +1,4 @@
-"""Sign-in with Microsoft Entra (the existing "Farview Apps" registration).
+"""Sign-in with Microsoft Entra (single-tenant, Farview's tenant only).
 
 dev mode: no login, you are an admin (local only).
 entra mode: OIDC auth-code flow via MSAL; only @farviewequity.com accounts;
@@ -59,11 +59,14 @@ def finish_login(request: Request) -> User:
     claims = result.get("id_token_claims", {})
     email = (claims.get("preferred_username") or claims.get("email") or "").lower()
     st = get_settings()
+    if st.entra_tenant_id and claims.get("tid") and claims["tid"].lower() != st.entra_tenant_id.lower():
+        raise HTTPException(403, "This app is for Farview accounts only.")
     if not email.endswith("@" + st.allowed_email_domain):
         raise HTTPException(403, "This app is for Farview accounts only.")
-    user = User(email=email, name=claims.get("name", email), admin=email in st.admin_list)
+    user = User(email=email, name=claims.get("name", email))
+    request.session.clear()  # nothing from before sign-in survives it (new CSRF token too)
     request.session["user"] = dict(user)
-    return user
+    return User(user, admin=email in st.admin_list)
 
 
 def current_user(request: Request) -> User | None:
@@ -71,7 +74,10 @@ def current_user(request: Request) -> User | None:
     if st.auth_mode == "dev":
         return User(email="dev@local", name="Developer", admin=True)
     u = request.session.get("user")
-    return User(u) if u else None
+    if not u or not u.get("email"):
+        return None
+    # admin is decided on every request from PRISM_ADMIN_EMAILS, so removing someone takes effect at once
+    return User(u, admin=u["email"].lower() in st.admin_list)
 
 
 def csrf_token(request: Request) -> str:
@@ -85,7 +91,8 @@ def csrf_token(request: Request) -> str:
 def check_csrf(request: Request, token: str | None) -> None:
     if get_settings().auth_mode == "dev" and request.session.get("csrf") is None:
         return
-    if not token or token != request.session.get("csrf"):
+    expected = request.session.get("csrf")
+    if not token or not expected or not pysecrets.compare_digest(str(token), str(expected)):
         raise HTTPException(400, "Form expired, please reload the page.")
 
 
