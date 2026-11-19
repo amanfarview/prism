@@ -22,7 +22,7 @@ router = APIRouter()
 
 def projected(s, sch: Schedule) -> float:
     b = s.get(Brand, sch.brand_id)
-    q = select(Engine).where(Engine.enabled.is_(True))
+    q = select(Engine).where(Engine.enabled == True)
     if sch.engine_keys:
         q = q.where(Engine.key.in_(sch.engine_keys))
     per_call = sum(e.est_cost() for e in s.scalars(q))
@@ -41,7 +41,7 @@ def home(request: Request, s=Depends(get_db), user=Depends(require_admin)):
                              .where(SpendEntry.month == month_key()).group_by(SpendEntry.provider)).all())
     engines = list(s.scalars(select(Engine).order_by(Engine.provider, Engine.key)))
     keys = {k.provider: k for k in s.scalars(select(ProviderKey))}
-    scheds = list(s.scalars(select(Schedule).where(Schedule.active.is_(True))))
+    scheds = list(s.scalars(select(Schedule).where(Schedule.active == True)))
     proj = sum(projected(s, x) for x in scheds)
     runs = list(s.scalars(select(Run).order_by(Run.id.desc()).limit(10)))
     bmap = {b.id: b for b in s.scalars(select(Brand))}
@@ -179,7 +179,7 @@ async def budget_save(request: Request, s=Depends(get_db), user=Depends(require_
 def schedules(request: Request, s=Depends(get_db), user=Depends(require_admin)):
     rows = list(s.scalars(select(Schedule).order_by(Schedule.brand_id)))
     bmap = {b.id: b for b in s.scalars(select(Brand))}
-    engines = list(s.scalars(select(Engine).where(Engine.enabled.is_(True)).order_by(Engine.label)))
+    engines = list(s.scalars(select(Engine).where(Engine.enabled == True).order_by(Engine.label)))
     proj = {x.id: projected(s, x) for x in rows}
     gcap, _ = caps(s)
     return render(request, "cc_schedules.html", s, user, rows=rows, bmap=bmap, engines=engines, proj=proj,

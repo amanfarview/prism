@@ -109,7 +109,7 @@ def token_user(s, header: str | None, need_write: bool = False) -> User | None:
     if not header or not header.lower().startswith("bearer "):
         return None
     tok = header.split(" ", 1)[1].strip()
-    row = s.scalar(select(ApiToken).where(ApiToken.token_hash == hash_token(tok), ApiToken.revoked.is_(False)))
+    row = s.scalar(select(ApiToken).where(ApiToken.token_hash == hash_token(tok), ApiToken.revoked == False))
     if not row or (need_write and row.scope != "write"):
         return None
     row.last_used_at = now()

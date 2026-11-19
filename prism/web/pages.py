@@ -312,7 +312,7 @@ def runs_page(request: Request, slug: str, s=Depends(get_db), user=Depends(requi
     for r in runs[:10]:
         errs[r.id] = s.execute(select(Answer.engine_key, Answer.error).where(Answer.run_id == r.id,
                                                                              Answer.status == "error").limit(3)).all()
-    engines = list(s.scalars(select(Engine).where(Engine.enabled.is_(True)).order_by(Engine.label)))
+    engines = list(s.scalars(select(Engine).where(Engine.enabled == True).order_by(Engine.label)))
     return render(request, "runs.html", s, user, b=b, runs=runs, errs=errs, engines=engines, tab="runs")
 
 

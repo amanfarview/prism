@@ -155,7 +155,7 @@ def require_admin(request: Request) -> auth.User:
 
 def render(request: Request, name: str, s, user, **ctx) -> HTMLResponse:
     st = get_settings()
-    brands = list(s.scalars(select(Brand).where(Brand.active.is_(True)).order_by(Brand.name)))
+    brands = list(s.scalars(select(Brand).where(Brand.active == True).order_by(Brand.name)))
     flash = request.session.pop("flash", None)
     return templates.TemplateResponse(request, name, {
         "user": user, "base": st.base_path, "brands_nav": brands, "csrf": auth.csrf_token(request),

@@ -208,3 +208,24 @@ def test_mssql_ddl_is_unicode_and_datetime2():
         str(CreateTable(AuditLog.__table__).compile(dialect=mssql.dialect()))
     assert "NVARCHAR(max)" in ddl and "DATETIME2" in ddl
     assert " VARCHAR(" not in ddl and " DATETIME," not in ddl and " DATETIME " not in ddl
+
+
+# ---------------------------------------------------------------- SQL Server compatibility
+def test_no_is_true_in_queries():
+    """SQL Server has no boolean type: `col IS 1` is a syntax error (found by azure_sql.py test, 19 Nov 2026).
+    Write `col == True`, which becomes `col = 1`."""
+    import re
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    for p in list((root / "prism").rglob("*.py")) + list((root / "deploy").glob("*.py")) + list((root / "scripts").glob("*.py")):
+        assert not re.search(r"\.is_\((True|False)\)|\.is_not\((True|False)\)", p.read_text()), f"{p}: use == True/False"
+
+
+def test_boolean_filters_compile_for_sql_server():
+    from sqlalchemy import select
+    from sqlalchemy.dialects import mssql
+
+    from prism.models import ApiToken, Engine
+    for q in [select(Engine).where(Engine.enabled == True), select(ApiToken).where(ApiToken.revoked == False)]:  # noqa: E712
+        sql = str(q.compile(dialect=mssql.dialect()))
+        assert " IS 1" not in sql and " IS 0" not in sql and " IS true" not in sql.lower()
